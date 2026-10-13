@@ -1,1 +1,174 @@
-Central management plane for Fabric Shortcut Proxy (FSP), orchestrating FSP deployments, data sources, connections, configuration, health, and operational lifecycle at scale.
+# FSP Orchestrator
+
+FSP Orchestrator is a local management plane for
+[Fabric Shortcut Proxy](https://github.com/Andreas-bersgtedt/Fabric-Shortcut-Proxy).
+It is intended to deploy, register, configure, observe, upgrade, back up, and
+recover FSP environments from one browser application.
+
+## Project status
+
+The repository is in planning and contract-definition work for FSP 3.1.0.
+Application code and installable packages are not available yet.
+
+The first planned release targets:
+
+- Windows 11 and Windows Server;
+- a Windows service that binds to a fixed loopback HTTPS origin;
+- a React and TypeScript single-page application;
+- an ASP.NET Core API on .NET 10;
+- single-tenant Microsoft Entra ID authentication;
+- FSP Lite and Enterprise 3.1.0 registration;
+- FSP Enterprise deployment to Azure Kubernetes Service;
+- prerequisite checks in the UI and API;
+- Bicep and Helm deployment adapters;
+- SQLite inventory and job state;
+- Azure Key Vault references for deployed secrets.
+
+Development work is tracked in
+[GitHub Issues](https://github.com/Andreas-bersgtedt/fsp-orchestrator/issues)
+and
+[GitHub Milestones](https://github.com/Andreas-bersgtedt/fsp-orchestrator/milestones).
+
+## Planned operator workflow
+
+1. Install the Windows service.
+2. Open the local HTTPS address in a browser.
+3. Sign in with Microsoft Entra ID.
+4. Run local, identity, Azure, network, capacity, and FSP prerequisite checks.
+5. Register an existing FSP environment or preview a new AKS deployment.
+6. Approve and run deployment or configuration jobs.
+7. Inspect health, Agents, work queues, versions, backups, and audit records.
+8. Apply upgrades through a versioned release and rollback contract.
+
+## Process layout
+
+```text
+Browser SPA
+    |
+    | HTTPS on loopback
+    v
+FSP Orchestrator Windows service
+    |-- Entra token validation and role checks
+    |-- prerequisite checker engine
+    |-- deployment and configuration jobs
+    |-- SQLite inventory, observations, and audit metadata
+    |
+    +--> Azure Resource Manager
+    +--> Azure Key Vault
+    +--> private AKS command channel
+    +--> FSP Manager and Config Builder APIs
+```
+
+The Orchestrator does not serve Fabric S3 traffic and does not generate Parquet
+files. Those responsibilities remain in FSP.
+
+## Authentication and authorization
+
+The browser application will use Microsoft Entra ID authorization code flow
+with PKCE. The SPA has no client secret. The local API validates tenant, issuer,
+audience, scope, expiration, and authorized client ID.
+
+Planned Orchestrator roles are:
+
+- `Reader`
+- `Operator`
+- `ConfigurationAdmin`
+- `DeploymentAdmin`
+- `SecurityAdmin`
+
+FSP keeps its own deployment-level roles. An Orchestrator role does not imply
+an FSP role.
+
+## Prerequisite checks
+
+Prerequisite checks are planned for:
+
+- local Windows host and service state;
+- local certificate, port, disk, database, and system clock;
+- Entra application settings and role assignments;
+- Azure subscription access and provider registration;
+- Azure actions at the selected resource scope;
+- regional SKU and quota availability;
+- network ranges, private DNS, and source connectivity paths;
+- FSP health, version agreement, control contract, and required APIs;
+- source drivers, source-side connection tests, and storage access;
+- upgrade, restore, rollback, and removal requirements.
+
+A deployment or configuration apply request must reference a passing,
+unexpired prerequisite run whose input fingerprint matches the requested
+operation.
+
+## Repository layout
+
+The planned source layout is:
+
+```text
+src/
+  Orchestrator.Api/
+  Orchestrator.Application/
+  Orchestrator.Domain/
+  Orchestrator.Infrastructure/
+  Orchestrator.Web/
+  Orchestrator.Installer/
+contracts/
+  fsp/
+deploy/
+  bicep/
+  helm/
+tests/
+  unit/
+  integration/
+  contract/
+  installer/
+```
+
+This structure will be added during the local shell and contract milestones.
+
+## Development
+
+No build command exists yet. The initial engineering sequence is:
+
+1. publish and test the FSP 3.1.0 API and release contracts;
+2. create the Windows service, SPA shell, installer, and Entra sign-in;
+3. register FSP deployments and collect observed state;
+4. deploy FSP Enterprise to AKS;
+5. manage configuration and Key Vault secret references;
+6. add operations, backup, and recovery;
+7. add release upgrades and federated deployment management.
+
+Build, test, and local run instructions will be added when the solution
+skeleton is committed.
+
+## Security boundary
+
+- The service binds only to loopback.
+- Production FSP Manager connections require TLS.
+- Access tokens and refresh tokens are not stored in SQLite.
+- Azure access tokens remain in memory for the active job.
+- Database passwords, S3 secret keys, Agent tokens, and Key Vault values are
+  not stored in the Orchestrator database.
+- Mutating API requests require Entra authentication, an allowed role, an
+  idempotency key, and any operation-specific prerequisite run.
+- Job output and exported reports pass through secret redaction.
+
+Security defects should not be filed in a public issue. Use GitHub's private
+vulnerability reporting channel when it is enabled for this repository.
+
+## Contributing
+
+The issue plan separates work into Epic, Story, and Task labels. Before starting
+work:
+
+1. select an issue from the active milestone;
+2. confirm its parent epic and acceptance criteria;
+3. record contract changes before changing an FSP integration surface;
+4. add the smallest test set that proves the acceptance criteria;
+5. avoid committing credentials, generated tokens, local databases, or FSP
+   configuration containing secrets.
+
+Contribution and pull request templates will be added with the solution
+skeleton.
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
