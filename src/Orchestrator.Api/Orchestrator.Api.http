@@ -1,7 +1,11 @@
-@baseUrl = http://localhost:5286
+@baseUrl = https://localhost:9443
 
 ### Get API health
 GET {{baseUrl}}/api/health
+Accept: application/json
+
+### Get startup readiness
+GET {{baseUrl}}/api/ready
 Accept: application/json
 
 ### Get the OpenAPI document

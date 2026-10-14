@@ -9,6 +9,9 @@
   <Folder Name="/tests/architecture/">
     <Project Path="tests/architecture/Orchestrator.ArchitectureTests/Orchestrator.ArchitectureTests.csproj" />
   </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/Orchestrator.IntegrationTests/Orchestrator.IntegrationTests.csproj" />
+  </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/Orchestrator.UnitTests/Orchestrator.UnitTests.csproj" />
   </Folder>
