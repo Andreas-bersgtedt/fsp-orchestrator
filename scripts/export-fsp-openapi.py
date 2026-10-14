@@ -24,10 +24,11 @@ def parse_args() -> argparse.Namespace:
         description="Export deterministic FSP OpenAPI contracts from an exact source checkout."
     )
     parser.add_argument(
-        "--fsp-source",
+        "--fsp-test-source",
+        dest="fsp_test_source",
         type=Path,
         required=True,
-        help="Path to the Fabric Shortcut Proxy source checkout.",
+        help="Test-only path to the exact Fabric Shortcut Proxy source fixture.",
     )
     parser.add_argument(
         "--output",
@@ -480,7 +481,7 @@ def export(source: Path, output: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    export(args.fsp_source.resolve(), args.output.resolve())
+    export(args.fsp_test_source.resolve(), args.output.resolve())
 
 
 if __name__ == "__main__":

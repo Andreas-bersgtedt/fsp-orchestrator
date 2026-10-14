@@ -9,7 +9,7 @@ Generate the documents from an exact checkout:
 
 ```powershell
 python scripts\export-fsp-openapi.py `
-  --fsp-source C:\path\to\Fabric-Shortcut-Proxy
+  --fsp-test-source C:\path\to\Fabric-Shortcut-Proxy
 ```
 
 The exporter records authentication implemented by FSP middleware because
@@ -32,6 +32,11 @@ npm run typecheck
 Run the clients against exact Lite and Enterprise 3.1.0 processes:
 
 ```powershell
-$env:FSP_SOURCE = "C:\path\to\Fabric-Shortcut-Proxy"
+$env:FSP_TEST_SOURCE = "C:\path\to\Fabric-Shortcut-Proxy"
 npm run test:fsp-runtime
 ```
+
+`FSP_TEST_SOURCE` is only a process-launch fixture for contract tests. The
+generated clients communicate with the launched deployment over HTTPS/HTTP and
+production Orchestrator code must not reference this variable or the fixture
+path.

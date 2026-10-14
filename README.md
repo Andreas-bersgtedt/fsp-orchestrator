@@ -147,6 +147,9 @@ skeleton is committed.
 - Azure access tokens remain in memory for the active job.
 - Database passwords, S3 secret keys, Agent tokens, and Key Vault values are
   not stored in the Orchestrator database.
+- The Orchestrator never requires access to an FSP host, pod, volume, install
+  directory, configuration file, or source checkout. Azure resources are
+  managed through ARM and AKS APIs; FSP state is managed through HTTPS APIs.
 - Mutating API requests require Entra authentication, an allowed role, an
   idempotency key, and any operation-specific prerequisite run.
 - Job output and exported reports pass through secret redaction.
