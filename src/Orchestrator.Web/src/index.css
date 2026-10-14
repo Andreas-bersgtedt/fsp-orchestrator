@@ -28,3 +28,10 @@ button,
 a {
   font: inherit;
 }
+
+.bootstrap-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #45566f;
+}

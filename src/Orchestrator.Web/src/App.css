@@ -25,6 +25,18 @@
   gap: 2px;
 }
 
+.header-actions,
+.account-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-control {
+  padding-left: 12px;
+  border-left: 1px solid #dbe3f0;
+}
+
 .product-kicker,
 .eyebrow {
   letter-spacing: 0.12em;
@@ -42,6 +54,21 @@ main {
   display: grid;
   gap: 18px;
   margin-bottom: 72px;
+}
+
+.auth-panel {
+  width: 100%;
+  margin-bottom: 48px;
+}
+
+.auth-progress {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+}
+
+.role-list {
+  flex-wrap: wrap;
 }
 
 .hero h1 {
@@ -97,6 +124,11 @@ main {
   color: #52627a;
 }
 
+.workflow-card .fui-CardFooter {
+  justify-content: space-between;
+  gap: 12px;
+}
+
 footer {
   padding: 20px 6vw;
   border-top: 1px solid #dbe3f0;
@@ -109,6 +141,17 @@ footer {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-control {
+    padding-left: 0;
+    border-left: 0;
   }
 
   .top-bar {

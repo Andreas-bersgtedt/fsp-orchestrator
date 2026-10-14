@@ -51,6 +51,31 @@ public sealed class ProjectBoundaryTests
     [Fact]
     public void ProductionSourceDoesNotReferenceTestFixturePath()
     {
+        foreach (var sourceFile in ProductionSourceFiles())
+        {
+            var source = File.ReadAllText(sourceFile);
+            Assert.DoesNotContain("FSP_TEST_SOURCE", source, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [InlineData("ClientSecret")]
+    [InlineData("client_secret")]
+    [InlineData("client-secret")]
+    public void ProductionSourceDoesNotDefineSpaClientSecrets(string forbiddenTerm)
+    {
+        foreach (var sourceFile in ProductionSourceFiles())
+        {
+            var source = File.ReadAllText(sourceFile);
+            Assert.DoesNotContain(
+                forbiddenTerm,
+                source,
+                StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private static IEnumerable<string> ProductionSourceFiles()
+    {
         var sourceRoot = Path.Combine(RepositoryRoot.FullName, "src");
         var dotnetSourceFiles = Directory.EnumerateFiles(
                 sourceRoot,
@@ -64,12 +89,7 @@ public sealed class ProjectBoundaryTests
                 SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".ts", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".tsx", StringComparison.OrdinalIgnoreCase));
-
-        foreach (var sourceFile in dotnetSourceFiles.Concat(webSourceFiles))
-        {
-            var source = File.ReadAllText(sourceFile);
-            Assert.DoesNotContain("FSP_TEST_SOURCE", source, StringComparison.Ordinal);
-        }
+        return dotnetSourceFiles.Concat(webSourceFiles);
     }
 
     private static bool HasDirectory(string path, string directoryName)

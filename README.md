@@ -155,6 +155,14 @@ The fixed origin is `https://localhost:9443`. The initial smoke endpoints are
 `/`, `/api/health`, `/api/ready`, and `/openapi/v1.json`. See the
 [local service smoke test](./docs/testing/local-service-smoke.md).
 
+Interactive sign-in uses Microsoft Entra authorization code flow with PKCE.
+Configure the tenant ID, API client ID, and SPA client ID through
+`Authentication:Entra` or the matching double-underscore environment
+variables. These are public identifiers; the SPA has no client secret. Until
+they are configured, the shell reports that Entra setup is required and
+protected API routes return `401`. See the
+[authentication decision](./docs/architecture/entra-user-authentication.md).
+
 The engineering sequence is:
 
 1. publish and test the FSP 3.1.0 API and release contracts;

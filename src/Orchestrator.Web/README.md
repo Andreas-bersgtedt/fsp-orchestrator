@@ -18,3 +18,7 @@ npm run dev
 The Vite development server proxies `/api` and `/openapi` to
 `https://localhost:9443`. The proxy accepts the local development certificate;
 the browser still uses Vite's own development origin.
+
+The production shell obtains public tenant, client, and scope identifiers from
+`/api/auth/config`, then uses MSAL authorization code flow with PKCE. MSAL uses
+session storage. Do not add client secrets or token persistence to this project.
