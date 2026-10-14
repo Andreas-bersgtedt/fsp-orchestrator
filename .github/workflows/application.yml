@@ -1,0 +1,79 @@
+name: Application
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/unit/**"
+      - "tests/architecture/**"
+      - "Directory.Build.props"
+      - "Fsp.Orchestrator.slnx"
+      - "global.json"
+      - ".github/workflows/application.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/unit/**"
+      - "tests/architecture/**"
+      - "Directory.Build.props"
+      - "Fsp.Orchestrator.slnx"
+      - "global.json"
+      - ".github/workflows/application.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test application
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/Orchestrator.Web/package-lock.json
+
+      - name: Restore .NET dependencies
+        run: dotnet restore Fsp.Orchestrator.slnx
+
+      - name: Verify .NET formatting
+        run: dotnet format Fsp.Orchestrator.slnx --no-restore --verify-no-changes
+
+      - name: Install SPA dependencies
+        working-directory: src/Orchestrator.Web
+        run: npm ci
+
+      - name: Lint and type-check SPA
+        working-directory: src/Orchestrator.Web
+        run: |
+          npm run lint
+          npm run typecheck
+
+      - name: Build application
+        run: dotnet build Fsp.Orchestrator.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test Fsp.Orchestrator.slnx --configuration Release --no-build
+
+      - name: Publish production application
+        run: dotnet publish src/Orchestrator.Api/Orchestrator.Api.csproj --configuration Release --no-build --output artifacts/application
+
+      - name: Upload production application
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsp-orchestrator-application
+          path: artifacts/application
+          if-no-files-found: error
+          retention-days: 7

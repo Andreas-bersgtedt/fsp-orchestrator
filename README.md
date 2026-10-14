@@ -7,8 +7,10 @@ recover FSP environments from one browser application.
 
 ## Project status
 
-The repository is in planning and contract-definition work for FSP 3.1.0.
-Application code and installable packages are not available yet.
+The FSP 3.1.0 contract milestone is complete. The repository now contains the
+initial .NET 10 API and React application shell. Windows service hosting,
+authentication, persistence, deployment workflows, and installable packages
+are not available yet.
 
 The first planned release targets:
 
@@ -122,11 +124,36 @@ tests/
   installer/
 ```
 
-This structure will be added during the local shell and contract milestones.
+The Domain, Application, Infrastructure, API, Web, unit-test, architecture-test,
+and contract-test projects are present. Installer and deployment projects will
+be added by their assigned milestones.
 
 ## Development
 
-No build command exists yet. The initial engineering sequence is:
+Install the .NET 10 SDK and Node.js 22, then build the API and production SPA
+with one command:
+
+```powershell
+dotnet build Fsp.Orchestrator.slnx
+```
+
+Run unit and architecture tests:
+
+```powershell
+dotnet test Fsp.Orchestrator.slnx
+```
+
+Start the local development API, which hosts the built SPA:
+
+```powershell
+dotnet run --project src\Orchestrator.Api\Orchestrator.Api.csproj
+```
+
+The default HTTP origin is `http://localhost:5286`. The initial smoke endpoints
+are `/`, `/api/health`, and `/openapi/v1.json`. Fixed loopback HTTPS and Windows
+service hosting are delivered by #15.
+
+The engineering sequence is:
 
 1. publish and test the FSP 3.1.0 API and release contracts;
 2. create the Windows service, SPA shell, installer, and Entra sign-in;
@@ -135,9 +162,6 @@ No build command exists yet. The initial engineering sequence is:
 5. manage configuration and Key Vault secret references;
 6. add operations, backup, and recovery;
 7. add release upgrades and federated deployment management.
-
-Build, test, and local run instructions will be added when the solution
-skeleton is committed.
 
 ## Security boundary
 

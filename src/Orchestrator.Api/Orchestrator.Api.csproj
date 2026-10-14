@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Orchestrator.Application\Orchestrator.Application.csproj" />
+    <ProjectReference Include="..\Orchestrator.Infrastructure\Orchestrator.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SpaRoot>..\Orchestrator.Web\</SpaRoot>
+    <SpaDist>$(SpaRoot)dist\</SpaDist>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SpaSource Include="$(SpaRoot)index.html" />
+    <SpaSource Include="$(SpaRoot)package-lock.json" />
+    <SpaSource Include="$(SpaRoot)package.json" />
+    <SpaSource Include="$(SpaRoot)src\**\*" />
+    <SpaSource Include="$(SpaRoot)tsconfig*.json" />
+    <SpaSource Include="$(SpaRoot)vite.config.ts" />
+  </ItemGroup>
+
+  <Target
+    Name="BuildSpa"
+    BeforeTargets="Build"
+    Inputs="@(SpaSource)"
+    Outputs="$(SpaDist)index.html">
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(SpaRoot)" />
+    <Exec Command="npm run build" WorkingDirectory="$(SpaRoot)" />
+  </Target>
+
+  <Target Name="CopySpaToBuildOutput" AfterTargets="Build">
+    <ItemGroup>
+      <SpaOutput Include="$(SpaDist)**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(SpaOutput)"
+      DestinationFiles="@(SpaOutput->'$(TargetDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CopySpaToPublishOutput" AfterTargets="Publish">
+    <ItemGroup>
+      <SpaPublishOutput Include="$(SpaDist)**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(SpaPublishOutput)"
+      DestinationFiles="@(SpaPublishOutput->'$(PublishDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
