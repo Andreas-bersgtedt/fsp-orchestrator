@@ -1,0 +1,39 @@
+name: Contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "tests/contract/**"
+      - ".github/workflows/contracts.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "contracts/**"
+      - "tests/contract/**"
+      - ".github/workflows/contracts.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  release-manifest:
+    name: Validate release manifest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tests/contract/requirements.txt
+
+      - name: Install contract test dependencies
+        run: python -m pip install --requirement tests/contract/requirements.txt
+
+      - name: Run contract tests
+        run: python -m unittest discover --start-directory tests/contract --pattern "test_*.py" --verbose

@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Andreas-bersgtedt/fsp-orchestrator/contracts/fsp/release-manifest.schema.json",
+  "title": "FSP release manifest",
+  "description": "Binds the packages, deployment artifacts, runtime images, and compatibility contracts that form one supported FSP release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fspVersion",
+    "componentsMoveTogether",
+    "packages",
+    "helmChart",
+    "images",
+    "bicepTemplate",
+    "contracts",
+    "upgradeEdges",
+    "qualification",
+    "signatures"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "schemaVersion": {
+      "$ref": "#/$defs/semanticVersion"
+    },
+    "fspVersion": {
+      "$ref": "#/$defs/semanticVersion"
+    },
+    "componentsMoveTogether": {
+      "type": "boolean"
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lite",
+        "enterprise"
+      ],
+      "properties": {
+        "lite": {
+          "$ref": "#/$defs/packageArtifact"
+        },
+        "enterprise": {
+          "$ref": "#/$defs/packageArtifact"
+        }
+      }
+    },
+    "helmChart": {
+      "$ref": "#/$defs/versionedArtifact"
+    },
+    "images": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/imageArtifact"
+      }
+    },
+    "bicepTemplate": {
+      "$ref": "#/$defs/versionedArtifact"
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "configurationSchema",
+        "openApiDocuments"
+      ],
+      "properties": {
+        "control": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/contractVersion"
+          }
+        },
+        "configurationSchema": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "openApiDocuments": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "upgradeEdges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/upgradeEdge"
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "qualifiedAt",
+        "evidenceDigest"
+      ],
+      "properties": {
+        "status": {
+          "const": "passed"
+        },
+        "qualifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidenceDigest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/signature"
+      }
+    }
+  },
+  "$defs": {
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "contractVersion": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*\\.[0-9]+$"
+    },
+    "packageArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "digest"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "$ref": "#/$defs/semanticVersion"
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "versionedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "digest"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/semanticVersion"
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "imageArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "reference",
+        "digest"
+      ],
+      "properties": {
+        "component": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "upgradeEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/semanticVersion"
+        },
+        "to": {
+          "$ref": "#/$defs/semanticVersion"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "keyId",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "enum": [
+            "ecdsa-p256-sha256",
+            "ed25519"
+          ]
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+={0,2}$",
+          "minLength": 32
+        }
+      }
+    }
+  }
+}
