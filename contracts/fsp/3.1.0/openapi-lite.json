@@ -1,0 +1,1354 @@
+{
+  "components": {
+    "responses": {
+      "ProblemDetails": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "description": "A stable FSP operator API error.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      },
+      "StaleRevision": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "stale_revision"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "The supplied configuration revision is stale.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "AgentList": {
+        "additionalProperties": false,
+        "properties": {
+          "agents": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dead": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents",
+          "dead"
+        ],
+        "type": "object"
+      },
+      "ConfigurationSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "config_file": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings",
+          "config_file"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdateResult": {
+        "additionalProperties": true,
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "restart_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "changed",
+          "restart_required"
+        ],
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": true,
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ProblemDetails": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "correlationId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri-reference",
+            "type": "string"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri-reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "correlationId"
+        ],
+        "type": "object"
+      },
+      "QueueActionResult": {
+        "additionalProperties": true,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "SourceValidationResult": {
+        "additionalProperties": true,
+        "properties": {
+          "capabilities": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "objects": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "const": true
+          },
+          "server_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "source_id"
+        ],
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "agentBearer": {
+        "description": "Microsoft Entra access token accepted on Agent control routes.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "agentToken": {
+        "description": "Shared Agent token accepted when token authentication is configured.",
+        "in": "header",
+        "name": "X-Agent-Token",
+        "type": "apiKey"
+      },
+      "operatorBasic": {
+        "description": "Manager operator credentials when standalone authentication is configured.",
+        "scheme": "basic",
+        "type": "http"
+      },
+      "operatorBearer": {
+        "description": "Microsoft Entra operator access token.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "sigV4": {
+        "description": "AWS Signature Version 4 authorization for the S3 data plane.",
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Virtual Iceberg-over-S3 proxy that serves SQL pushdown as Parquet",
+    "title": "Fabric Shortcut Proxy (POC)",
+    "version": "3.1.0",
+    "x-fsp-release": "3.1.0",
+    "x-fsp-source-commit": "8bb0474558c274666d6625a763a8ca9f02481c83"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Handle S3 ListBuckets \u2014 Fabric calls this first when browsing.",
+        "operationId": "list_buckets__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "List Buckets",
+        "x-fsp-auth-boundary": "public"
+      },
+      "head": {
+        "description": "S3 service-level HEAD \u2014 return 200 to confirm endpoint is alive.",
+        "operationId": "head_service__head",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Head Service",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/_admin/gc": {
+      "post": {
+        "description": "Phase 5: prune orphaned Parquet splits from the shared artifact store.\n\nDeletes data files no retained snapshot references (from versions aged out of\nhistory). ``?dry_run=true`` reports the orphans without deleting. Runs against\nthe local-dir/shared store regardless of ARTIFACT_STORE_SERVING.",
+        "operationId": "admin_gc__admin_gc_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Gc",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/objects": {
+      "get": {
+        "description": "Every virtual object the proxy currently serves, with the size DECLARED in\nthe manifest vs. the size currently CACHED. A mismatch (or an uncached data\nsplit during a long conversion) is the classic 404 BlobNotFound cause.",
+        "operationId": "admin_objects__admin_objects_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "table",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Table"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Objects  Admin Objects Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Objects",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/publish-image": {
+      "post": {
+        "description": "Phase 6: publish a complete servable image (data + metadata) to the store\nso a stateless/C++ Agent can serve every object as opaque bytes.",
+        "operationId": "admin_publish_image__admin_publish_image_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Publish Image",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/quarantine": {
+      "get": {
+        "description": "Tables quarantined at startup (unreachable/misconfigured source), with the\nreason and retry attempts. The agent serves every healthy table + mount and\nretries these in the background.",
+        "operationId": "admin_quarantine__admin_quarantine_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Quarantine  Admin Quarantine Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Quarantine",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/refresh": {
+      "post": {
+        "description": "Rebuild every table's Iceberg snapshot (e.g., after schema/data change).\n\nWith AUTO_REFRESH enabled, this forces a content-addressed materialize +\npublish per table (bypassing the change probe): a new snapshot version is\npublished only for tables whose content actually changed.\n\nWith ICEBERG_SNAPSHOT_HISTORY enabled, this instead *advances* each table to\na new snapshot version (retaining history for time-travel); the shared data\nfiles are reused, so only the metadata/manifest caches are cleared.",
+        "operationId": "refresh_snapshot__admin_refresh_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Refresh Snapshot",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/schemas": {
+      "get": {
+        "description": "Resolved Iceberg schema per table (field id/name/type/nullable), plus a\n``risky_types`` flag for column types Fabric/XTable commonly rejects. Use to\npinpoint why one table (e.g. Product) fails conversion while others succeed.",
+        "operationId": "admin_schemas__admin_schemas_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "table",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Table"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Schemas  Admin Schemas Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Schemas",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/stats": {
+      "get": {
+        "description": "Human-friendly JSON snapshot of metrics plus cache occupancy.",
+        "operationId": "admin_stats__admin_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Stats  Admin Stats Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Stats",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/timeline": {
+      "get": {
+        "description": "Per-table Fabric conversion timeline: request counts, wall-clock span,\ntime spent in the proxy vs. Fabric-side gaps, per-kind breakdown, slowest\nrequests, biggest gaps, and any 4xx/5xx (missing-blob) samples.",
+        "operationId": "admin_timeline__admin_timeline_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "table",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Table"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Timeline  Admin Timeline Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Timeline",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/trace": {
+      "get": {
+        "description": "Recent S3 request records (newest first) \u2014 the raw Fabric request log.\n\nFilter by ``table`` (virtual table name), ``kind`` (metadata/manifest/data/\nversion_hint/list), or HTTP ``status`` (e.g. 404 to find missing blobs).",
+        "operationId": "admin_trace__admin_trace_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "table",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Table"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Trace  Admin Trace Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Trace",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_admin/trace/reset": {
+      "post": {
+        "description": "Clear the trace buffer (call right before starting a fresh Fabric run).",
+        "operationId": "admin_trace_reset__admin_trace_reset_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Admin Trace Reset  Admin Trace Reset Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Admin Trace Reset",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_manager": {
+      "get": {
+        "operationId": "_manager_console_redirect__manager_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "rest",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Rest",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": " Manager Console Redirect",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_manager/{rest}": {
+      "get": {
+        "operationId": "_manager_console_redirect__manager__rest__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rest",
+            "required": true,
+            "schema": {
+              "title": "Rest",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": " Manager Console Redirect",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/favicon.ico": {
+      "get": {
+        "operationId": "_favicon_favicon_ico_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": " Favicon",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "Liveness: the process is running and can serve HTTP.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful response."
+          }
+        },
+        "security": [],
+        "summary": "Healthz",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/metrics": {
+      "get": {
+        "description": "Prometheus text exposition of all in-process metrics.",
+        "operationId": "metrics_endpoint_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Metrics Endpoint",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Readiness: the Iceberg snapshot is built and the source DB is reachable.\n\nWhile draining, report 503 up front so an external load balancer deregisters\nthis backend before the process exits (in-flight requests still complete).",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful response."
+          }
+        },
+        "security": [],
+        "summary": "Readyz",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/{bucket}": {
+      "get": {
+        "description": "Handle ListObjectsV2 (list-type=2) and legacy ListObjects.",
+        "operationId": "list_objects_v2__bucket__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket",
+            "required": true,
+            "schema": {
+              "title": "Bucket",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "sigV4": []
+          }
+        ],
+        "summary": "List Objects V2",
+        "x-fsp-auth-boundary": "sigV4"
+      },
+      "head": {
+        "description": "S3 HeadBucket \u2014 confirm the bucket exists.",
+        "operationId": "head_bucket__bucket__head",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket",
+            "required": true,
+            "schema": {
+              "title": "Bucket",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "sigV4": []
+          }
+        ],
+        "summary": "Head Bucket",
+        "x-fsp-auth-boundary": "sigV4"
+      }
+    },
+    "/{bucket}/{key}": {
+      "get": {
+        "description": "Serve a virtual S3 object.\n\nMetadata / manifest objects: served from pre-built bytes.\nData objects (*.parquet): trigger SQL pushdown \u2192 Parquet generation.\n\nAn empty key (trailing slash on bucket, e.g. /bucket/) is treated as\na ListObjectsV2 request so Fabric's folder browser works correctly.",
+        "operationId": "get_object__bucket___key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket",
+            "required": true,
+            "schema": {
+              "title": "Bucket",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "sigV4": []
+          }
+        ],
+        "summary": "Get Object",
+        "x-fsp-auth-boundary": "sigV4"
+      },
+      "head": {
+        "operationId": "head_object__bucket___key__head",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket",
+            "required": true,
+            "schema": {
+              "title": "Bucket",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "sigV4": []
+          }
+        ],
+        "summary": "Head Object",
+        "x-fsp-auth-boundary": "sigV4"
+      }
+    }
+  },
+  "x-fsp-authentication-boundaries": {
+    "agent": "Manager control routes require an Agent token or Microsoft Entra Agent identity.",
+    "dataPlane": "Lite S3 routes require AWS Signature Version 4.",
+    "operator": "Operator routes require configured Basic or Microsoft Entra authentication.",
+    "public": "Health, readiness, metrics, and static entry routes are anonymous."
+  },
+  "x-fsp-contract-overlays": {
+    "revisionAndProblemDetails": {
+      "description": "Required Orchestrator compatibility contract not implemented by the immutable 3.1.0 release.",
+      "issue": "https://github.com/Andreas-bersgtedt/Fabric-Shortcut-Proxy/issues/176",
+      "status": "required-upstream"
+    }
+  }
+}

@@ -1,0 +1,3536 @@
+{
+  "components": {
+    "responses": {
+      "ProblemDetails": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "description": "A stable FSP operator API error.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      },
+      "StaleRevision": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "stale_revision"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "The supplied configuration revision is stale.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "AgentList": {
+        "additionalProperties": false,
+        "properties": {
+          "agents": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dead": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents",
+          "dead"
+        ],
+        "type": "object"
+      },
+      "Body_upload_restore__config_api_restore_post": {
+        "properties": {
+          "backup": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Backup",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "backup"
+        ],
+        "title": "Body_upload_restore__config_api_restore_post",
+        "type": "object"
+      },
+      "ConfigurationSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "config_file": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings",
+          "config_file"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdateResult": {
+        "additionalProperties": true,
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "restart_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "changed",
+          "restart_required"
+        ],
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": true,
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ProblemDetails": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "correlationId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri-reference",
+            "type": "string"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri-reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "correlationId"
+        ],
+        "type": "object"
+      },
+      "QueueActionResult": {
+        "additionalProperties": true,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "SourceValidationResult": {
+        "additionalProperties": true,
+        "properties": {
+          "capabilities": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "objects": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "const": true
+          },
+          "server_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "source_id"
+        ],
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "agentBearer": {
+        "description": "Microsoft Entra access token accepted on Agent control routes.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "agentToken": {
+        "description": "Shared Agent token accepted when token authentication is configured.",
+        "in": "header",
+        "name": "X-Agent-Token",
+        "type": "apiKey"
+      },
+      "operatorBasic": {
+        "description": "Manager operator credentials when standalone authentication is configured.",
+        "scheme": "basic",
+        "type": "http"
+      },
+      "operatorBearer": {
+        "description": "Microsoft Entra operator access token.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "sigV4": {
+        "description": "AWS Signature Version 4 authorization for the S3 data plane.",
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "title": "Fabric Shortcut Proxy: Config Builder",
+    "version": "3.1.0",
+    "x-fsp-release": "3.1.0",
+    "x-fsp-source-commit": "8bb0474558c274666d6625a763a8ca9f02481c83"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/_config": {
+      "get": {
+        "operationId": "index__config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Index",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/_config/": {
+      "get": {
+        "operationId": "index__config__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Index",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/_config/api/access-keys": {
+      "get": {
+        "description": "Non-secret list of proxy access keys + their scope.",
+        "operationId": "list_access_keys_endpoint__config_api_access_keys_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Access Keys Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Create or update a proxy access key + ACL scope.\n\nBody: ``{access_key_id?, secret_key?, label, allowed_buckets, allowed_prefixes,\npermissions, enabled}``. Omitting ``access_key_id``/``secret_key`` on create\ngenerates a fresh pair (the secret is returned once, then never again).",
+        "operationId": "save_access_key_endpoint__config_api_access_keys_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Access Key Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/access-keys/{access_key_id}": {
+      "delete": {
+        "operationId": "delete_access_key_endpoint__config_api_access_keys__access_key_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "access_key_id",
+            "required": true,
+            "schema": {
+              "title": "Access Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Access Key Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/access-keys/{access_key_id}/rotate": {
+      "post": {
+        "description": "Rotate an existing key's secret (scope preserved). Returns the new secret once.",
+        "operationId": "rotate_access_key_endpoint__config_api_access_keys__access_key_id__rotate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "access_key_id",
+            "required": true,
+            "schema": {
+              "title": "Access Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Rotate Access Key Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/apply": {
+      "post": {
+        "description": "Apply settings to the running process AND persist to config.json in one call.\n\nLive-applicable settings (see ``config.LIVE_SETTINGS``) take effect\nimmediately \u2014 no restart needed. Structural settings (DB_URL, PORT, bucket,\netc.) are persisted to config.json and reported as ``restart_required``.\n\nRequest body: ``{\"settings\": {\"key\": value, ...}}``",
+        "operationId": "apply_config__config_api_apply_post",
+        "parameters": [
+          {
+            "description": "ETag returned by the last successful configuration read or write.",
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "pattern": "^(?:W/)?\\\"[^\\\"]+\\\"$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigurationUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationUpdateResult"
+                }
+              }
+            },
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "description": "Revision of the configuration after this operation.",
+                "schema": {
+                  "pattern": "^(?:W/)?\\\"[^\\\"]+\\\"$",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "409": {
+            "$ref": "#/components/responses/StaleRevision"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Apply Config",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/audit": {
+      "get": {
+        "description": "Most recent storage-proxy audit events (in-memory ring).",
+        "operationId": "recent_audit__config_api_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tenant_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Recent Audit",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/groups": {
+      "get": {
+        "description": "List configured Entra group role assignments without secrets.",
+        "operationId": "authorization_groups__config_api_authorization_groups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Groups",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Create or replace an Entra security-group role assignment.",
+        "operationId": "save_authorization_group__config_api_authorization_groups_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Authorization Group",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/groups/{group_id}": {
+      "delete": {
+        "description": "Disable an Entra security-group role assignment.",
+        "operationId": "disable_authorization_group__config_api_authorization_groups__group_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Disable Authorization Group",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/login": {
+      "post": {
+        "description": "Authenticate a local user and issue a revocable HttpOnly session cookie.",
+        "operationId": "authorization_login__config_api_authorization_login_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Login",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/logout": {
+      "post": {
+        "description": "Revoke the current local session and clear its cookie.",
+        "operationId": "authorization_logout__config_api_authorization_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Logout",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/me": {
+      "get": {
+        "description": "Return the authenticated identity and effective permissions.",
+        "operationId": "authorization_me__config_api_authorization_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Me",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/msal-config": {
+      "get": {
+        "description": "Return non-secret MSAL browser configuration.",
+        "operationId": "authorization_msal_config__config_api_authorization_msal_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Msal Config",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/status": {
+      "get": {
+        "description": "Expose only whether route authorization is enabled, never credentials.",
+        "operationId": "authorization_status__config_api_authorization_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Status",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/users": {
+      "get": {
+        "description": "List safe user metadata for the authenticated transitional administrator.",
+        "operationId": "authorization_users__config_api_authorization_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Authorization Users",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Create or replace safe user metadata for the transitional administrator.",
+        "operationId": "save_authorization_user__config_api_authorization_users_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Authorization User",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/authorization/users/{user_id}": {
+      "delete": {
+        "description": "Disable a user while preserving the last enabled administrator.",
+        "operationId": "disable_authorization_user__config_api_authorization_users__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Disable Authorization User",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/azure-credentials": {
+      "get": {
+        "description": "Non-secret list of stored upstream Azure credential ids.",
+        "operationId": "list_azure_credentials__config_api_azure_credentials_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Azure Credentials",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Encrypt + persist an upstream Azure credential blob, keyed by an id.\n\nBody: ``{credential_id, auth: {mode, ...}}``. Secrets are validated per mode\nand stored encrypted; only the id is ever returned.",
+        "operationId": "save_azure_credential__config_api_azure_credentials_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Azure Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/azure-credentials/{credential_id}": {
+      "delete": {
+        "description": "Remove a stored Azure credential (running Agents keep it until the next restart).",
+        "operationId": "delete_azure_credential__config_api_azure_credentials__credential_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "title": "Credential Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Azure Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/backup": {
+      "post": {
+        "description": "Create a portable password-encrypted backup of all FSP-managed state.",
+        "operationId": "download_backup__config_api_backup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "format": "password",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.fsp.backup": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Password-encrypted FSP backup archive.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-FSP-Backup-Summary": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Download Backup",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/bootstrap": {
+      "get": {
+        "description": "Runtime snapshot used by the builder UI to prefill the main form.\n\nReturns non-secret effective values plus the currently configured table\nmappings so opening ``/_config`` starts from what is running now.",
+        "operationId": "bootstrap_builder__config_api_bootstrap_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Bootstrap Builder",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/connect": {
+      "post": {
+        "operationId": "connect__config_api_connect_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Connect",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/connections/{connection_id}": {
+      "delete": {
+        "description": "Persistently remove a named source, its table mappings, and its credential.",
+        "operationId": "delete_connection__config_api_connections__connection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "title": "Connection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Connection",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/credentials": {
+      "get": {
+        "description": "Non-secret status of the Manager credential store (never returns URLs).",
+        "operationId": "list_credentials__config_api_credentials_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Credentials",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Encrypt + persist a connection's DB URL so it survives a restart.\n\nBody: ``{connection_id, db_url}`` OR ``{connection_id, connection: {..fields}}``.\nOptional ``apply: true`` restarts the Agents so the new credential takes\neffect now (otherwise it applies on the next Manager start).",
+        "operationId": "save_credential__config_api_credentials_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/credentials/{connection_id}": {
+      "delete": {
+        "description": "Remove a stored credential (running Agents keep it until the next restart).",
+        "operationId": "delete_credential__config_api_credentials__connection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "title": "Connection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/current": {
+      "get": {
+        "description": "Phase 5.1: the CURRENT effective configuration \u2014 each setting's live value\nand its source (env / config.json / default), secrets redacted. Lets the\nbuilder show what's actually running, not just defaults.",
+        "operationId": "current_config__config_api_current_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationSnapshot"
+                }
+              }
+            },
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "description": "Revision of the configuration after this operation.",
+                "schema": {
+                  "pattern": "^(?:W/)?\\\"[^\\\"]+\\\"$",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Current Config",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/entra/directory/groups": {
+      "get": {
+        "description": "Search Entra security groups for role assignment.",
+        "operationId": "entra_directory_groups__config_api_entra_directory_groups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Entra Directory Groups",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/entra/directory/users": {
+      "get": {
+        "description": "Search Entra users for role assignment without exposing Graph credentials.",
+        "operationId": "entra_directory_users__config_api_entra_directory_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Entra Directory Users",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/inspect": {
+      "post": {
+        "operationId": "inspect_tables__config_api_inspect_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Inspect Tables",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/keyvault": {
+      "get": {
+        "description": "Non-secret Key Vault / Entra ID config + live status for the builder panel.",
+        "operationId": "keyvault_status__config_api_keyvault_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Keyvault Status",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/keyvault/test": {
+      "post": {
+        "description": "Live Key Vault connectivity test for the 'Test Key Vault' button.\n\nAn optional body ``{vault_uri, auth_mode, tenant_id, client_id}`` tests\nunsaved values; otherwise the saved config is used. The service-principal\nclient secret is read from ``AZURE_CLIENT_SECRET`` \u2014 never sent from the UI.",
+        "operationId": "keyvault_test__config_api_keyvault_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Keyvault Test",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/manager/restart": {
+      "post": {
+        "description": "Restart the Manager using Entra admin authorization or the local password.",
+        "operationId": "restart_manager__config_api_manager_restart_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Restart Manager",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/catalog": {
+      "get": {
+        "description": "Return the allowlisted optional module catalog and runtime status.",
+        "operationId": "module_catalog__config_api_modules_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Module Catalog",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/desired": {
+      "post": {
+        "description": "Persist an allowlisted desired module profile; installation is restart-bound.",
+        "operationId": "save_module_profile__config_api_modules_desired_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Module Profile",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/install": {
+      "post": {
+        "description": "Start an allowlisted dependency install; never execute browser package input.",
+        "operationId": "install_modules__config_api_modules_install_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Install Modules",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/operation": {
+      "get": {
+        "description": "Return the current controlled dependency operation state.",
+        "operationId": "module_operation_status__config_api_modules_operation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Module Operation Status",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/plan": {
+      "post": {
+        "description": "Preview a desired module profile without writing or installing packages.",
+        "operationId": "module_plan_endpoint__config_api_modules_plan_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Module Plan Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/modules/status": {
+      "get": {
+        "description": "Return desired, installed, and active module states.",
+        "operationId": "module_status_endpoint__config_api_modules_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Module Status Endpoint",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/mounts": {
+      "get": {
+        "description": "Current storage-proxy mount table + enable flag (config.mounts.json).",
+        "operationId": "list_mounts__config_api_mounts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Mounts",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Validate + persist the mount table to config.mounts.json (restart to apply).\n\nOptionally also flips ``enable_storage_proxy`` in config.system.json.",
+        "operationId": "save_mounts__config_api_mounts_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Mounts",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/mounts/inspect": {
+      "post": {
+        "description": "Reflect a tokenizing mount's source columns through the object-store reader.\n\nBuilds a transient mount from the posted form and calls the Delta/Iceberg\nreader's ``schema()`` so the Config Builder can populate the column policy\neditor. Requires the ``objectstore`` extra and a reachable source (and, for\ns3/azure, the credential already saved) \u2014 same trust as the mount test.",
+        "operationId": "inspect_mount__config_api_mounts_inspect_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Inspect Mount",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/mounts/test": {
+      "post": {
+        "description": "Verify a mount's backend is reachable (local: a directory; s3: list a prefix).",
+        "operationId": "test_mount__config_api_mounts_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Test Mount",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/fabric/workspaces": {
+      "get": {
+        "description": "List Fabric workspaces visible to the proxy's Entra identity (Open Mirror picker).",
+        "operationId": "open_mirror_fabric_workspaces__config_api_open_mirror_fabric_workspaces_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Open Mirror Fabric Workspaces",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/fabric/workspaces/{workspace_id}/mirrored-databases": {
+      "get": {
+        "description": "List mirrored databases in a workspace, each with its computed landing-zone root.",
+        "operationId": "open_mirror_fabric_mirrored_dbs__config_api_open_mirror_fabric_workspaces__workspace_id__mirrored_databases_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Open Mirror Fabric Mirrored Dbs",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/health": {
+      "post": {
+        "description": "Run read-only dependency checks for one edited Open Mirror target.",
+        "operationId": "check_open_mirror_health__config_api_open_mirror_health_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Check Open Mirror Health",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/inspect-table": {
+      "post": {
+        "description": "Detect the key column + columns for one table on a saved connection id.\n\nBody: ``{\"connection\": \"source_1\", \"schema\": \"SalesLT\", \"name\": \"Customer\"}``.",
+        "operationId": "open_mirror_inspect_table__config_api_open_mirror_inspect_table_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Open Mirror Inspect Table",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/list-tables": {
+      "post": {
+        "description": "List tables/views for a SAVED connection id (for the Open Mirror table picker).\n\nBody: ``{\"connection\": \"source_1\"}``. Reflects using the connection's stored\nURL \u2014 no credentials are entered or returned.",
+        "operationId": "open_mirror_list_tables__config_api_open_mirror_list_tables_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Open Mirror List Tables",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/preview": {
+      "post": {
+        "description": "Validate one target and return the landing-zone folder layout it would write.\n\nNo database access and no writes: this only computes the Fabric folder paths\n(table folders, ``_metadata.json``, first data file, ``_partnerEvents.json``)\nso the operator can confirm the target before saving.",
+        "operationId": "preview_open_mirror__config_api_open_mirror_preview_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Preview Open Mirror",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/publish": {
+      "post": {
+        "description": "Start a background publish job and return its queryable status immediately.\n\nBody (all optional): ``{\"target_id\": \"...\", \"dry_run\": true}``. With no\n``target_id`` every configured target is published. Failures are quarantined\nper target/table and returned in the response rather than raising.",
+        "operationId": "publish_open_mirror__config_api_open_mirror_publish_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Publish Open Mirror",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/publish/jobs/latest": {
+      "get": {
+        "operationId": "latest_open_mirror_publish_job__config_api_open_mirror_publish_jobs_latest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Latest Open Mirror Publish Job",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/publish/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_open_mirror_publish_job__config_api_open_mirror_publish_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Get Open Mirror Publish Job",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/reset": {
+      "post": {
+        "description": "Explicitly remove one table's local cursor after operator confirmation.",
+        "operationId": "reset_open_mirror_table__config_api_open_mirror_reset_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Reset Open Mirror Table",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/open-mirror/save": {
+      "post": {
+        "description": "Validate + persist Open Mirroring targets to config.open_mirror.json.\n\nBody: ``{\"open_mirror_targets\": [ {id, connection, landing_zone_root, tables[...]} ]}``.\nApplies on the next restart (config is import-time).",
+        "operationId": "save_open_mirror__config_api_open_mirror_save_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Open Mirror",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/reidentification/mappings": {
+      "get": {
+        "description": "List mapping metadata without tokens or source values.",
+        "operationId": "reidentification_mappings__config_api_reidentification_mappings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Reidentification Mappings",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Create or replace one validated source lookup mapping.",
+        "operationId": "save_reidentification_mapping__config_api_reidentification_mappings_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Reidentification Mapping",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/reidentification/mappings/{policy_id}/{table_id}/{column_id}": {
+      "delete": {
+        "description": "Delete one mapping without exposing source data or token values.",
+        "operationId": "delete_reidentification_mapping__config_api_reidentification_mappings__policy_id___table_id___column_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "table_id",
+            "required": true,
+            "schema": {
+              "title": "Table Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "column_id",
+            "required": true,
+            "schema": {
+              "title": "Column Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Reidentification Mapping",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/restore": {
+      "post": {
+        "description": "Restore an uploaded backup; the Manager must restart to load it.",
+        "operationId": "upload_restore__config_api_restore_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_restore__config_api_restore_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Restore result and restored asset counts."
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Upload Restore",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/s3-credentials": {
+      "get": {
+        "description": "Non-secret list of stored upstream S3 credential ids.",
+        "operationId": "list_s3_credentials__config_api_s3_credentials_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List S3 Credentials",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Encrypt + persist an upstream S3 credential blob, keyed by an id.\n\nBody: ``{credential_id, auth: {mode, ...}}``. Secrets are validated per mode\nand stored encrypted; only the id is ever returned.",
+        "operationId": "save_s3_credential__config_api_s3_credentials_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save S3 Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/s3-credentials/{credential_id}": {
+      "delete": {
+        "description": "Remove a stored S3 credential (running Agents keep it until the next restart).",
+        "operationId": "delete_s3_credential__config_api_s3_credentials__credential_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "title": "Credential Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete S3 Credential",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/save": {
+      "post": {
+        "description": "Phase 5.1: validate + persist a partial settings map to the on-disk\n``config.json`` (atomic merge, preserving ``tables`` and unlisted keys).\n\nConfig is import-time, so persisted changes apply on the next start\n(``restart_required``) \u2014 except ``agent_count``, which the Manager can also\napply live via ``POST /_manager/api/scale``.",
+        "operationId": "save_config__config_api_save_post",
+        "parameters": [
+          {
+            "description": "ETag returned by the last successful configuration read or write.",
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "pattern": "^(?:W/)?\\\"[^\\\"]+\\\"$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigurationUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationUpdateResult"
+                }
+              }
+            },
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "description": "Revision of the configuration after this operation.",
+                "schema": {
+                  "pattern": "^(?:W/)?\\\"[^\\\"]+\\\"$",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "409": {
+            "$ref": "#/components/responses/StaleRevision"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Config",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/settings": {
+      "get": {
+        "description": "Full catalog of global settings (json key, env var, type, default,\ncategory, help) so the UI can show every setting with its default.",
+        "operationId": "settings__config_api_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Settings",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/sources": {
+      "get": {
+        "description": "Return saved database connections and storage mounts without secrets.",
+        "operationId": "list_sources__config_api_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Sources",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/sources/{source_id}/discover": {
+      "post": {
+        "description": "List selectable objects from one saved source.",
+        "operationId": "discover_source_objects__config_api_sources__source_id__discover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Discover Source Objects",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/sources/{source_id}/inspect": {
+      "post": {
+        "description": "Return normalized metadata for one object in a saved source.",
+        "operationId": "inspect_source_object__config_api_sources__source_id__inspect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Inspect Source Object",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/sources/{source_id}/validate": {
+      "post": {
+        "description": "Validate one saved source through its effective credentialed URL.",
+        "operationId": "validate_source__config_api_sources__source_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceValidationResult"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Validate Source",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/tokenization-key-references": {
+      "get": {
+        "description": "List configured tokenization key references without returning key values.",
+        "operationId": "tokenization_key_references__config_api_tokenization_key_references_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Tokenization Key References",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/tokenization-keys": {
+      "get": {
+        "description": "Return encrypted token-key metadata without key values.",
+        "operationId": "list_tokenization_keys__config_api_tokenization_keys_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Tokenization Keys",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Encrypt a tokenization key locally and optionally mirror it to Key Vault.",
+        "operationId": "save_tokenization_key__config_api_tokenization_keys_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Tokenization Key",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/tokenization-keys/{key_ref}": {
+      "delete": {
+        "description": "Remove a locally stored tokenization key and its Key Vault mirror.",
+        "operationId": "delete_tokenization_key__config_api_tokenization_keys__key_ref__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_ref",
+            "required": true,
+            "schema": {
+              "title": "Key Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Delete Tokenization Key",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/tokenization/policies": {
+      "get": {
+        "description": "Return the central policy catalog without returning secret values.",
+        "operationId": "tokenization_policies__config_api_tokenization_policies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Tokenization Policies",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "description": "Create or replace one central policy; secret values are never accepted.",
+        "operationId": "save_tokenization_policy__config_api_tokenization_policies_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Save Tokenization Policy",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/_config/api/tokenization/policies/{policy_id}": {
+      "delete": {
+        "description": "Disable a policy without deleting its historical metadata.",
+        "operationId": "disable_tokenization_policy__config_api_tokenization_policies__policy_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Disable Tokenization Policy",
+        "x-fsp-auth-boundary": "operator"
+      }
+    }
+  },
+  "x-fsp-authentication-boundaries": {
+    "agent": "Manager control routes require an Agent token or Microsoft Entra Agent identity.",
+    "dataPlane": "Lite S3 routes require AWS Signature Version 4.",
+    "operator": "Operator routes require configured Basic or Microsoft Entra authentication.",
+    "public": "Health, readiness, metrics, and static entry routes are anonymous."
+  },
+  "x-fsp-contract-overlays": {
+    "revisionAndProblemDetails": {
+      "description": "Required Orchestrator compatibility contract not implemented by the immutable 3.1.0 release.",
+      "issue": "https://github.com/Andreas-bersgtedt/Fabric-Shortcut-Proxy/issues/176",
+      "status": "required-upstream"
+    }
+  }
+}

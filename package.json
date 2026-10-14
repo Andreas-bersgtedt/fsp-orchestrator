@@ -1,0 +1,18 @@
+{
+  "name": "fsp-orchestrator-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate:fsp": "openapi-typescript contracts/fsp/3.1.0/openapi-lite.json -o generated/fsp/3.1.0/lite.d.ts && openapi-typescript contracts/fsp/3.1.0/openapi-manager.json -o generated/fsp/3.1.0/manager.d.ts && openapi-typescript contracts/fsp/3.1.0/openapi-catalog.json -o generated/fsp/3.1.0/catalog.d.ts && openapi-typescript contracts/fsp/3.1.0/openapi-config-builder.json -o generated/fsp/3.1.0/config-builder.d.ts",
+    "check:fsp-clients": "npm run generate:fsp && git diff --exit-code -- generated/fsp",
+    "test:fsp-runtime": "tsx --test tests/contract/fsp-runtime.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.10",
+    "openapi-fetch": "0.17.0",
+    "openapi-typescript": "7.13.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

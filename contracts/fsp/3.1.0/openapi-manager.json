@@ -1,0 +1,950 @@
+{
+  "components": {
+    "responses": {
+      "ProblemDetails": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "description": "A stable FSP operator API error.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      },
+      "StaleRevision": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "stale_revision"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "The supplied configuration revision is stale.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "AgentList": {
+        "additionalProperties": false,
+        "properties": {
+          "agents": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dead": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents",
+          "dead"
+        ],
+        "type": "object"
+      },
+      "ConfigurationSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "config_file": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings",
+          "config_file"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdateResult": {
+        "additionalProperties": true,
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "restart_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "changed",
+          "restart_required"
+        ],
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": true,
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ProblemDetails": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "correlationId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri-reference",
+            "type": "string"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri-reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "correlationId"
+        ],
+        "type": "object"
+      },
+      "QueueActionResult": {
+        "additionalProperties": true,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "SourceValidationResult": {
+        "additionalProperties": true,
+        "properties": {
+          "capabilities": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "objects": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "const": true
+          },
+          "server_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "source_id"
+        ],
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "agentBearer": {
+        "description": "Microsoft Entra access token accepted on Agent control routes.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "agentToken": {
+        "description": "Shared Agent token accepted when token authentication is configured.",
+        "in": "header",
+        "name": "X-Agent-Token",
+        "type": "apiKey"
+      },
+      "operatorBasic": {
+        "description": "Manager operator credentials when standalone authentication is configured.",
+        "scheme": "basic",
+        "type": "http"
+      },
+      "operatorBearer": {
+        "description": "Microsoft Entra operator access token.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "sigV4": {
+        "description": "AWS Signature Version 4 authorization for the S3 data plane.",
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "title": "Fabric Shortcut Proxy: Manager",
+    "version": "3.1.0",
+    "x-fsp-release": "3.1.0",
+    "x-fsp-source-commit": "8bb0474558c274666d6625a763a8ca9f02481c83"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/agents": {
+      "get": {
+        "operationId": "agents_agents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Agents",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/control/assignment/{agent_id}": {
+      "get": {
+        "operationId": "get_assignment_control_assignment__agent_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Get Assignment",
+        "tags": [
+          "control"
+        ],
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/egress-report": {
+      "get": {
+        "operationId": "control_egress_report_control_egress_report_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Control Egress Report",
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/heartbeat": {
+      "post": {
+        "operationId": "heartbeat_control_heartbeat_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Heartbeat",
+        "tags": [
+          "control"
+        ],
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/materialize": {
+      "post": {
+        "description": "On-demand materialization for stateless (e.g. C++) Agents under lazy mode.\n\nAn Agent that hits a store miss posts ``{\"key\": \"<object key>\"}``; the\nManager materializes that table into the shared artifact store (data +\nmetadata) so the Agent can then serve it. No-op-safe / idempotent.",
+        "operationId": "control_materialize_control_materialize_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Control Materialize",
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/register": {
+      "post": {
+        "operationId": "register_control_register_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Register",
+        "tags": [
+          "control"
+        ],
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/snapshot/{table}": {
+      "get": {
+        "operationId": "get_snapshot_control_snapshot__table__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "table",
+            "required": true,
+            "schema": {
+              "title": "Table",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "epoch",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Epoch",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Get Snapshot",
+        "tags": [
+          "control"
+        ],
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/task-result": {
+      "post": {
+        "operationId": "task_result_control_task_result_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Task Result",
+        "tags": [
+          "control"
+        ],
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/work-queue": {
+      "get": {
+        "operationId": "control_work_queue_status_control_work_queue_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Current durable work queue and scheduler status."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Control Work Queue Status",
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/work-queue/requests/{request_id}/cancel": {
+      "post": {
+        "operationId": "cancel_work_request_control_work_queue_requests__request_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueActionResult"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "409": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Cancel Work Request",
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/control/work-queue/tasks/{task_id}/retry": {
+      "post": {
+        "operationId": "retry_work_task_control_work_queue_tasks__task_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueActionResult"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "409": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          },
+          {
+            "agentToken": []
+          }
+        ],
+        "summary": "Retry Work Task",
+        "x-fsp-auth-boundary": "agent"
+      }
+    },
+    "/favicon.ico": {
+      "get": {
+        "operationId": "favicon_favicon_ico_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Favicon",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful response."
+          }
+        },
+        "security": [],
+        "summary": "Healthz",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "manager_metrics_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Manager Metrics",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful response."
+          }
+        },
+        "security": [],
+        "summary": "Readyz",
+        "x-fsp-auth-boundary": "public"
+      }
+    }
+  },
+  "x-fsp-authentication-boundaries": {
+    "agent": "Manager control routes require an Agent token or Microsoft Entra Agent identity.",
+    "dataPlane": "Lite S3 routes require AWS Signature Version 4.",
+    "operator": "Operator routes require configured Basic or Microsoft Entra authentication.",
+    "public": "Health, readiness, metrics, and static entry routes are anonymous."
+  },
+  "x-fsp-contract-overlays": {
+    "revisionAndProblemDetails": {
+      "description": "Required Orchestrator compatibility contract not implemented by the immutable 3.1.0 release.",
+      "issue": "https://github.com/Andreas-bersgtedt/Fabric-Shortcut-Proxy/issues/176",
+      "status": "required-upstream"
+    }
+  }
+}
