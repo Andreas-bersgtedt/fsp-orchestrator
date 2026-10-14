@@ -1,1 +1,4 @@
 devplan/
+node_modules/
+tests/contract/__pycache__/
+artifacts/

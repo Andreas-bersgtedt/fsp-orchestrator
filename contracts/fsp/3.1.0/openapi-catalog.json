@@ -1,0 +1,922 @@
+{
+  "components": {
+    "responses": {
+      "ProblemDetails": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "description": "A stable FSP operator API error.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      },
+      "StaleRevision": {
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "const": "stale_revision"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "The supplied configuration revision is stale.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "Correlation identifier also returned in the response body.",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "AgentList": {
+        "additionalProperties": false,
+        "properties": {
+          "agents": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dead": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents",
+          "dead"
+        ],
+        "type": "object"
+      },
+      "ConfigurationSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "config_file": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings",
+          "config_file"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "ConfigurationUpdateResult": {
+        "additionalProperties": true,
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "restart_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "changed",
+          "restart_required"
+        ],
+        "type": "object"
+      },
+      "CreateDatasetRequest": {
+        "properties": {
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "freshness_target_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "Freshness Target Ms",
+            "type": "integer"
+          },
+          "lease_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "Lease Ms",
+            "type": "integer"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "owner_location": {
+            "title": "Owner Location",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "owner_id",
+          "owner_location",
+          "lease_ms",
+          "freshness_target_ms"
+        ],
+        "title": "CreateDatasetRequest",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HandoverRequest": {
+        "properties": {
+          "fence": {
+            "exclusiveMinimum": 0.0,
+            "title": "Fence",
+            "type": "integer"
+          },
+          "lease_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "Lease Ms",
+            "type": "integer"
+          },
+          "new_location": {
+            "title": "New Location",
+            "type": "string"
+          },
+          "new_owner_id": {
+            "title": "New Owner Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_id",
+          "fence",
+          "new_owner_id",
+          "new_location",
+          "lease_ms"
+        ],
+        "title": "HandoverRequest",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": true,
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ProblemDetails": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "correlationId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri-reference",
+            "type": "string"
+          },
+          "status": {
+            "maximum": 599,
+            "minimum": 400,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri-reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "correlationId"
+        ],
+        "type": "object"
+      },
+      "QueueActionResult": {
+        "additionalProperties": true,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "RenewRequest": {
+        "properties": {
+          "fence": {
+            "exclusiveMinimum": 0.0,
+            "title": "Fence",
+            "type": "integer"
+          },
+          "lease_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "Lease Ms",
+            "type": "integer"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_id",
+          "fence",
+          "lease_ms"
+        ],
+        "title": "RenewRequest",
+        "type": "object"
+      },
+      "SourceValidationResult": {
+        "additionalProperties": true,
+        "properties": {
+          "capabilities": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "objects": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "ok": {
+            "const": true
+          },
+          "server_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "source_id"
+        ],
+        "type": "object"
+      },
+      "TakeoverRequest": {
+        "properties": {
+          "lease_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "Lease Ms",
+            "type": "integer"
+          },
+          "new_location": {
+            "title": "New Location",
+            "type": "string"
+          },
+          "new_owner_id": {
+            "title": "New Owner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_owner_id",
+          "new_location",
+          "lease_ms"
+        ],
+        "title": "TakeoverRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "agentBearer": {
+        "description": "Microsoft Entra access token accepted on Agent control routes.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "agentToken": {
+        "description": "Shared Agent token accepted when token authentication is configured.",
+        "in": "header",
+        "name": "X-Agent-Token",
+        "type": "apiKey"
+      },
+      "operatorBasic": {
+        "description": "Manager operator credentials when standalone authentication is configured.",
+        "scheme": "basic",
+        "type": "http"
+      },
+      "operatorBearer": {
+        "description": "Microsoft Entra operator access token.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "sigV4": {
+        "description": "AWS Signature Version 4 authorization for the S3 data plane.",
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "title": "Fabric Shortcut Proxy: Global Catalog",
+    "version": "3.1.0",
+    "x-fsp-release": "3.1.0",
+    "x-fsp-source-commit": "8bb0474558c274666d6625a763a8ca9f02481c83"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/catalog/datasets": {
+      "get": {
+        "operationId": "list_datasets_catalog_datasets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "List Datasets",
+        "x-fsp-auth-boundary": "operator"
+      },
+      "post": {
+        "operationId": "create_dataset_catalog_datasets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDatasetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Create Dataset",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/catalog/datasets/{dataset_id}": {
+      "get": {
+        "operationId": "get_dataset_catalog_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Get Dataset",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/catalog/datasets/{dataset_id}/handover": {
+      "post": {
+        "operationId": "handover_catalog_datasets__dataset_id__handover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Handover",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/catalog/datasets/{dataset_id}/renew": {
+      "post": {
+        "operationId": "renew_catalog_datasets__dataset_id__renew_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Renew",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/catalog/datasets/{dataset_id}/resolve": {
+      "get": {
+        "operationId": "resolve_catalog_datasets__dataset_id__resolve_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Endpoint Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Resolve",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/catalog/datasets/{dataset_id}/takeover": {
+      "post": {
+        "operationId": "takeover_catalog_datasets__dataset_id__takeover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeoverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        },
+        "security": [
+          {
+            "operatorBearer": []
+          },
+          {
+            "operatorBasic": []
+          }
+        ],
+        "summary": "Takeover",
+        "x-fsp-auth-boundary": "operator"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          }
+        },
+        "security": [],
+        "summary": "Healthz",
+        "x-fsp-auth-boundary": "public"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catalog operation result."
+          }
+        },
+        "security": [],
+        "summary": "Readyz",
+        "x-fsp-auth-boundary": "public"
+      }
+    }
+  },
+  "x-fsp-authentication-boundaries": {
+    "agent": "Manager control routes require an Agent token or Microsoft Entra Agent identity.",
+    "dataPlane": "Lite S3 routes require AWS Signature Version 4.",
+    "operator": "Operator routes require configured Basic or Microsoft Entra authentication.",
+    "public": "Health, readiness, metrics, and static entry routes are anonymous."
+  },
+  "x-fsp-contract-overlays": {
+    "revisionAndProblemDetails": {
+      "description": "Required Orchestrator compatibility contract not implemented by the immutable 3.1.0 release.",
+      "issue": "https://github.com/Andreas-bersgtedt/Fabric-Shortcut-Proxy/issues/176",
+      "status": "required-upstream"
+    }
+  }
+}
