@@ -13,7 +13,7 @@ import {
 } from "../../generated/fsp/3.1.0/clients.js";
 
 
-const source = process.env.FSP_SOURCE;
+const source = process.env.FSP_TEST_SOURCE;
 const python = process.env.PYTHON ?? "python";
 const agentToken = "fsp-contract-harness-agent-token";
 const operatorPassword = "fsp-contract-harness-operator-password";
@@ -162,7 +162,10 @@ function contractTest(name: string, body: () => Promise<void>): void {
 
 before(async () => {
   try {
-    assert(source, "FSP_SOURCE must point to an exact FSP 3.1.0 source checkout");
+    assert(
+      source,
+      "FSP_TEST_SOURCE must point to an exact test-only FSP 3.1.0 source fixture",
+    );
     workRoot = await mkdtemp(path.join(tmpdir(), "fsp-contract-"));
     const managerRoot = path.join(workRoot, "manager");
     const agentRoot = path.join(workRoot, "agent");
