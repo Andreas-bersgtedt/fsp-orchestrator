@@ -1,0 +1,74 @@
+{
+  "$schema": "../release-manifest.schema.json",
+  "schemaVersion": "1.0.0",
+  "fspVersion": "3.1.0",
+  "componentsMoveTogether": true,
+  "packages": {
+    "lite": {
+      "name": "fabric-shortcut-proxy",
+      "version": "3.1.0",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "enterprise": {
+      "name": "fabric-shortcut-proxy-enterprise",
+      "version": "3.1.0",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  },
+  "helmChart": {
+    "version": "3.1.0",
+    "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "images": [
+    {
+      "component": "manager",
+      "reference": "fsp/manager:3.1.0",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    {
+      "component": "materializer",
+      "reference": "fsp/materializer:3.1.0",
+      "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    {
+      "component": "reader",
+      "reference": "fsp/reader:3.1.0",
+      "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "bicepTemplate": {
+    "version": "3.1.0",
+    "digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "contracts": {
+    "control": [
+      "1.1",
+      "1.0"
+    ],
+    "configurationSchema": "1.0",
+    "openApiDocuments": [
+      "openapi-lite.json",
+      "openapi-manager.json",
+      "openapi-catalog.json",
+      "openapi-config-builder.json"
+    ]
+  },
+  "upgradeEdges": [
+    {
+      "from": "3.0.1",
+      "to": "3.1.0"
+    }
+  ],
+  "qualification": {
+    "status": "passed",
+    "qualifiedAt": "2026-10-14T00:00:00Z",
+    "evidenceDigest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "signatures": [
+    {
+      "algorithm": "ed25519",
+      "keyId": "fsp-release-signing-1",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    }
+  ]
+}
