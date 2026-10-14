@@ -143,15 +143,17 @@ Run unit and architecture tests:
 dotnet test Fsp.Orchestrator.slnx
 ```
 
-Start the local development API, which hosts the built SPA:
+Install and trust the development certificate, then start the local API, which
+hosts the built SPA:
 
 ```powershell
+dotnet dev-certs https --trust
 dotnet run --project src\Orchestrator.Api\Orchestrator.Api.csproj
 ```
 
-The default HTTP origin is `http://localhost:5286`. The initial smoke endpoints
-are `/`, `/api/health`, and `/openapi/v1.json`. Fixed loopback HTTPS and Windows
-service hosting are delivered by #15.
+The fixed origin is `https://localhost:9443`. The initial smoke endpoints are
+`/`, `/api/health`, `/api/ready`, and `/openapi/v1.json`. See the
+[local service smoke test](./docs/testing/local-service-smoke.md).
 
 The engineering sequence is:
 

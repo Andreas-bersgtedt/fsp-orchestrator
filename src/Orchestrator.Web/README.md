@@ -16,4 +16,5 @@ npm run dev
 ```
 
 The Vite development server proxies `/api` and `/openapi` to
-`http://localhost:5286`.
+`https://localhost:9443`. The proxy accepts the local development certificate;
+the browser still uses Vite's own development origin.
