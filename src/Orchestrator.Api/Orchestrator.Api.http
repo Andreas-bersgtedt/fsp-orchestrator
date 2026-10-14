@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:5286
+
+### Get API health
+GET {{baseUrl}}/api/health
+Accept: application/json
+
+### Get the OpenAPI document
+GET {{baseUrl}}/openapi/v1.json
+Accept: application/json
+
+### Load the hosted SPA
+GET {{baseUrl}}/
+Accept: text/html

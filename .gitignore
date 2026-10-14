@@ -2,3 +2,6 @@ devplan/
 node_modules/
 tests/contract/__pycache__/
 artifacts/
+**/bin/
+**/obj/
+src/Orchestrator.Web/dist/
