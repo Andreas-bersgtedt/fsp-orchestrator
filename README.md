@@ -150,6 +150,7 @@ skeleton is committed.
 - The Orchestrator never requires access to an FSP host, pod, volume, install
   directory, configuration file, or source checkout. Azure resources are
   managed through ARM and AKS APIs; FSP state is managed through HTTPS APIs.
+  See the [remote management boundary](./docs/architecture/remote-fsp-management-boundary.md).
 - Mutating API requests require Entra authentication, an allowed role, an
   idempotency key, and any operation-specific prerequisite run.
 - Job output and exported reports pass through secret redaction.
