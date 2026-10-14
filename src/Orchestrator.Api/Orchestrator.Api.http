@@ -8,9 +8,19 @@ Accept: application/json
 GET {{baseUrl}}/api/ready
 Accept: application/json
 
+### Get public Entra configuration
+GET {{baseUrl}}/api/auth/config
+Accept: application/json
+
+### Get signed-in operator session
+GET {{baseUrl}}/api/session
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
 ### Get the OpenAPI document
 GET {{baseUrl}}/openapi/v1.json
 Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
 
 ### Load the hosted SPA
 GET {{baseUrl}}/

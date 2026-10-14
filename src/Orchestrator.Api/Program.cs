@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 
@@ -17,6 +18,7 @@ builder.Host.UseWindowsService(options =>
 var hostingRuntime = LoopbackHosting.Configure(builder);
 builder.Services.AddSingleton(hostingRuntime);
 builder.Services.AddSingleton<StartupReadiness>();
+builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddValidation();
@@ -39,11 +41,17 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapOpenApi();
-app.MapHealth();
-app.MapMethods(
-        "/api/{**path}",
+app.MapOpenApi()
+    .RequireAuthorization(OrchestratorRoles.Reader);
+var api = app.MapGroup("/api")
+    .RequireAuthorization(AuthorizationPolicies.Access);
+api.MapHealth();
+api.MapAuthentication();
+api.MapMethods(
+        "/{**path}",
         ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
         () => TypedResults.Problem(
             statusCode: StatusCodes.Status404NotFound,
@@ -57,6 +65,7 @@ app.MapMethods(
             statusCode: StatusCodes.Status404NotFound,
             title: "OpenAPI document not found",
             detail: "The requested OpenAPI document does not exist."))
+    .RequireAuthorization(OrchestratorRoles.Reader)
     .ExcludeFromDescription();
 app.MapFallbackToFile("index.html");
 

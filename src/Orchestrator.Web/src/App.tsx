@@ -5,6 +5,9 @@ import {
   CardFooter,
   CardHeader,
   FluentProvider,
+  MessageBar,
+  MessageBarBody,
+  MessageBarTitle,
   Spinner,
   Text,
   Title1,
@@ -12,6 +15,7 @@ import {
   webLightTheme,
 } from '@fluentui/react-components'
 import { useEffect, useState } from 'react'
+import type { AuthenticationState } from './auth/authTypes.ts'
 import './App.css'
 
 type HealthResponse = {
@@ -30,22 +34,29 @@ const workflows = [
     description:
       'Validate this host, identity, Azure access, network paths, capacity, and FSP compatibility.',
     action: 'Open prerequisites',
+    permission: 'Operator',
   },
   {
     title: 'Register deployment',
     description:
       'Connect to an existing FSP Lite or Enterprise endpoint through its versioned HTTPS API.',
     action: 'Register FSP',
+    permission: 'Operator',
   },
   {
     title: 'Deploy to Azure',
     description:
       'Preview and apply an Enterprise deployment through ARM and the private AKS command API.',
     action: 'Create deployment',
+    permission: 'DeploymentAdmin',
   },
 ] as const
 
-function App() {
+export default function App({
+  authentication,
+}: {
+  authentication: AuthenticationState
+}) {
   const [health, setHealth] = useState<HealthState>({ kind: 'loading' })
 
   useEffect(() => {
@@ -89,7 +100,10 @@ function App() {
               Orchestrator
             </Text>
           </div>
-          <HealthBadge health={health} />
+          <div className="header-actions">
+            <HealthBadge health={health} />
+            <AccountControl authentication={authentication} />
+          </div>
         </header>
 
         <main>
@@ -105,6 +119,8 @@ function App() {
             </Text>
           </section>
 
+          <AuthenticationPanel authentication={authentication} />
+
           <section aria-labelledby="workflow-heading">
             <div className="section-heading">
               <div>
@@ -115,19 +131,27 @@ function App() {
             </div>
 
             <div className="workflow-grid">
-              {workflows.map((workflow) => (
-                <Card key={workflow.title} className="workflow-card">
-                  <CardHeader
-                    header={<Text weight="semibold">{workflow.title}</Text>}
-                    description={<Text>{workflow.description}</Text>}
-                  />
-                  <CardFooter>
-                    <Button appearance="primary" disabled>
-                      {workflow.action}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+              {workflows.map((workflow) => {
+                const allowed =
+                  authentication.kind === 'signed-in' &&
+                  authentication.session.permissions[workflow.permission]
+                return (
+                  <Card key={workflow.title} className="workflow-card">
+                    <CardHeader
+                      header={<Text weight="semibold">{workflow.title}</Text>}
+                      description={<Text>{workflow.description}</Text>}
+                    />
+                    <CardFooter>
+                      <Button appearance="primary" disabled={!allowed}>
+                        {workflow.action}
+                      </Button>
+                      <Text size={200}>
+                        Requires {workflow.permission}
+                      </Text>
+                    </CardFooter>
+                  </Card>
+                )
+              })}
             </div>
           </section>
         </main>
@@ -140,6 +164,122 @@ function App() {
         </footer>
       </div>
     </FluentProvider>
+  )
+}
+
+function AuthenticationPanel({
+  authentication,
+}: {
+  authentication: AuthenticationState
+}) {
+  if (authentication.kind === 'setup-required') {
+    return (
+      <MessageBar intent="warning" className="auth-panel">
+        <MessageBarBody>
+          <MessageBarTitle>Microsoft Entra setup required</MessageBarTitle>
+          Configure the tenant, SPA client ID, API client ID, delegated scope,
+          and application roles. No client secret is required or supported.
+        </MessageBarBody>
+      </MessageBar>
+    )
+  }
+
+  if (authentication.kind === 'signed-out') {
+    return (
+      <Card className="auth-panel">
+        <CardHeader
+          header={<Text weight="semibold">Sign in to manage FSP</Text>}
+          description={
+            <Text>
+              Use your organizational Microsoft account. Authentication uses
+              authorization code flow with PKCE and no application secret.
+            </Text>
+          }
+        />
+        <CardFooter>
+          <Button
+            appearance="primary"
+            onClick={() => void authentication.signIn()}
+          >
+            Sign in with Microsoft
+          </Button>
+        </CardFooter>
+      </Card>
+    )
+  }
+
+  if (authentication.kind === 'signed-in') {
+    return (
+      <Card className="auth-panel">
+        <CardHeader
+          header={
+            <Text weight="semibold">
+              Signed in as {authentication.session.displayName}
+            </Text>
+          }
+          description={<Text>{authentication.session.username}</Text>}
+        />
+        <CardFooter className="role-list">
+          {authentication.session.roles.map((role) => (
+            <Badge key={role} appearance="outline">
+              {role}
+            </Badge>
+          ))}
+        </CardFooter>
+      </Card>
+    )
+  }
+
+  if (authentication.kind === 'error') {
+    return (
+      <MessageBar intent="error" className="auth-panel">
+        <MessageBarBody>
+          <MessageBarTitle>Authentication unavailable</MessageBarTitle>
+          {authentication.message}
+          <Button
+            appearance="subtle"
+            onClick={() => void authentication.retry()}
+          >
+            Retry
+          </Button>
+        </MessageBarBody>
+      </MessageBar>
+    )
+  }
+
+  return (
+    <div className="auth-panel auth-progress">
+      <Spinner
+        label={
+          authentication.kind === 'signing-in'
+            ? 'Completing Microsoft sign-in'
+            : 'Loading authentication'
+        }
+      />
+    </div>
+  )
+}
+
+function AccountControl({
+  authentication,
+}: {
+  authentication: AuthenticationState
+}) {
+  if (authentication.kind !== 'signed-in') {
+    return null
+  }
+
+  return (
+    <div className="account-control">
+      <Text size={200}>{authentication.session.username}</Text>
+      <Button
+        appearance="subtle"
+        size="small"
+        onClick={() => void authentication.signOut()}
+      >
+        Sign out
+      </Button>
+    </div>
   )
 }
 
@@ -158,5 +298,3 @@ function HealthBadge({ health }: { health: HealthState }) {
     </Badge>
   )
 }
-
-export default App

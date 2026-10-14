@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
+using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Microsoft.AspNetCore.Hosting;
@@ -42,33 +43,48 @@ public sealed class ApiHostingTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task HealthReadinessOpenApiAndSpaShareOneOrigin()
+    public async Task HealthReadinessAndSpaShareOneOrigin()
     {
         using var client = CreateClient();
 
         var health = await client.GetFromJsonAsync<HealthResponse>("/api/health");
         var readiness = await client.GetFromJsonAsync<ReadinessResponse>("/api/ready");
-        var openApi = await client.GetAsync("/openapi/v1.json");
         var spa = await client.GetStringAsync("/");
 
         Assert.Equal("ok", health!.Status);
         Assert.Equal("ready", readiness!.Status);
         Assert.Equal(LoopbackHosting.Origin, readiness.Origin);
-        Assert.Equal(HttpStatusCode.OK, openApi.StatusCode);
         Assert.Contains("<title>FSP Orchestrator</title>", spa, StringComparison.Ordinal);
     }
 
     [Theory]
     [InlineData("/api/does-not-exist")]
+    [InlineData("/openapi/v1.json")]
     [InlineData("/openapi/does-not-exist")]
-    public async Task ApiAndOpenApiMissesReturnProblemDetails(string path)
+    public async Task ProtectedRoutesReturnUnauthorizedWithoutToken(string path)
     {
         using var client = CreateClient();
 
         var response = await client.GetAsync(path);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublicAuthenticationConfigurationContainsNoCredentials()
+    {
+        using var client = CreateClient();
+
+        var response = await client.GetAsync("/api/auth/config");
+        var body = await response.Content.ReadAsStringAsync();
+        var configuration =
+            await response.Content.ReadFromJsonAsync<AuthenticationConfigurationResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(configuration!.Configured);
+        Assert.DoesNotContain("secret", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("token", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("key", body, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

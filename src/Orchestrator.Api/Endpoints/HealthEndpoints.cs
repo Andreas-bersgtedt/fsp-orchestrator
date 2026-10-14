@@ -8,7 +8,7 @@ public static class HealthEndpoints
     public static IEndpointRouteBuilder MapHealth(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet(
-                "/api/health",
+                "/health",
                 Ok<HealthResponse> (CancellationToken cancellationToken) =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -18,10 +18,11 @@ public static class HealthEndpoints
             .WithName("GetOrchestratorHealth")
             .WithSummary("Get Orchestrator health")
             .WithDescription("Returns the local Orchestrator process health and current UTC time.")
-            .Produces<HealthResponse>(StatusCodes.Status200OK);
+            .Produces<HealthResponse>(StatusCodes.Status200OK)
+            .AllowAnonymous();
 
         endpoints.MapGet(
-                "/api/ready",
+                "/ready",
                 Results<Ok<ReadinessResponse>, ProblemHttpResult> (
                     StartupReadiness readiness,
                     HostingRuntime hostingRuntime,
@@ -49,7 +50,8 @@ public static class HealthEndpoints
                 "Reports ready only after the loopback HTTPS listener, certificate, "
                 + "and local state directory have initialized.")
             .Produces<ReadinessResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .AllowAnonymous();
 
         return endpoints;
     }
