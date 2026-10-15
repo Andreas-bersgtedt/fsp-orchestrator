@@ -42,6 +42,10 @@ const DeploymentInventory = lazy(async () => {
   const module = await import('./deployments/DeploymentInventory.tsx')
   return { default: module.DeploymentInventory }
 })
+const AzureDiscovery = lazy(async () => {
+  const module = await import('./azure/AzureDiscovery.tsx')
+  return { default: module.AzureDiscovery }
+})
 
 type HealthResponse = {
   status: string
@@ -205,6 +209,16 @@ export default function App({
                   authentication.session.permissions.Operator,
                 )}
                 refreshKey={inventoryRefreshKey}
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
+          authentication.session.permissions.DeploymentAdmin ? (
+            <Suspense fallback={<Spinner label="Loading Azure discovery" />}>
+              <AzureDiscovery
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
               />
             </Suspense>
           ) : null}

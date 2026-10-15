@@ -4,6 +4,8 @@ const graphRoot = 'https://graph.microsoft.com/v1.0'
 const graphAppId = '00000003-0000-0000-c000-000000000000'
 const userReadScopeId = 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
 const applicationReadAllScopeId = 'c79f8feb-a9db-4090-85f9-90d820caa0eb'
+const azureServiceManagementAppId = '797f4846-ba00-4fd7-ba43-dac1f8f63013'
+const azureUserImpersonationScopeId = '41094075-9dad-400e-a0bd-54e686782033'
 const redirectUri = 'https://localhost:9443/auth/callback'
 const scopeName = 'orchestrator.access_as_user'
 const roles = [
@@ -160,6 +162,12 @@ export async function createRecommendedRegistrations(
             {
               resourceAppId: api.appId,
               resourceAccess: [{ id: scopeId, type: 'Scope' }],
+            },
+            {
+              resourceAppId: azureServiceManagementAppId,
+              resourceAccess: [
+                { id: azureUserImpersonationScopeId, type: 'Scope' },
+              ],
             },
           ],
         },

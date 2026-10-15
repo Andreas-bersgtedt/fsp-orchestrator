@@ -184,6 +184,12 @@ probe checks HTTPS health, readiness, the FSP 3.1.0 OpenAPI identity, topology,
 and Enterprise credentials before one SQLite transaction creates inventory and
 component-version observations.
 
+Azure discovery uses a
+[delegated in-memory ARM session](./docs/architecture/delegated-azure-session.md).
+The API verifies that the Orchestrator and ARM tokens identify the same tenant,
+user, and SPA client before listing allowed subscriptions and stable resource
+IDs.
+
 Registered deployments are polled by the
 [observation scheduler](./docs/architecture/deployment-observations.md).
 Latest failures are reported separately from the timestamp and values of the

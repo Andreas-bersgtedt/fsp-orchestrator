@@ -150,6 +150,26 @@ Accept: text/html
 POST {{baseUrl}}/api/deployments
 Accept: application/json
 Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Hand off delegated Azure Resource Manager token
+POST {{baseUrl}}/api/azure/session
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "accessToken": "{{AZURE_RESOURCE_MANAGER_ACCESS_TOKEN}}"
+}
+
+### List allowed Azure subscriptions
+GET {{baseUrl}}/api/azure/subscriptions
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### List resources after server-side subscription validation
+GET {{baseUrl}}/api/azure/resources?subscriptionId={{subscriptionId}}&resourceGroup={{resourceGroup}}
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
 Content-Type: application/json
 
 {

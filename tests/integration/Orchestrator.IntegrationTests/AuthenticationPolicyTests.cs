@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Fsp.Orchestrator.Api.Authentication;
+using Fsp.Orchestrator.Api.Azure;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Deployments;
@@ -454,6 +456,77 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task DeploymentAdminCanHandOffArmTokenAndDiscoverAllowedScope()
+    {
+        const string armToken =
+            "arm-token-that-must-remain-in-memory-only-"
+            + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+        using var client = CreateAuthenticatedClient(
+            OrchestratorRoles.DeploymentAdmin);
+        var handoff = await client.PostAsJsonAsync(
+            "/api/azure/session",
+            new AzureTokenHandoffRequest { AccessToken = armToken });
+        var subscriptions = await client.GetAsync("/api/azure/subscriptions");
+        var resources = await client.GetAsync(
+            $"/api/azure/resources?subscriptionId={TestAzureResourceDiscovery.SubscriptionId}");
+
+        Assert.Equal(HttpStatusCode.OK, handoff.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, subscriptions.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, resources.StatusCode);
+        var body = await resources.Content.ReadAsStringAsync();
+        Assert.Contains(
+            $"/subscriptions/{TestAzureResourceDiscovery.SubscriptionId}/",
+            body,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(armToken, body, StringComparison.Ordinal);
+
+        SqliteConnection.ClearAllPools();
+        var databaseBytes = await File.ReadAllBytesAsync(
+            Path.Combine(dataDirectory, "orchestrator.db"));
+        Assert.DoesNotContain(
+            armToken,
+            System.Text.Encoding.UTF8.GetString(databaseBytes),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ReaderCannotEstablishAzureSession()
+    {
+        using var client = CreateAuthenticatedClient(OrchestratorRoles.Reader);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/azure/session",
+            new AzureTokenHandoffRequest
+            {
+                AccessToken = new string('x', 200),
+            });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MissingAzureSessionReturnsStableSignInRequiredCode()
+    {
+        using var client = CreateAuthenticatedClient(
+            OrchestratorRoles.DeploymentAdmin);
+        _ = await client.DeleteAsync("/api/azure/session");
+
+        var response = await client.GetAsync("/api/azure/subscriptions");
+        using var body = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            "azure.sign_in_required",
+            body.RootElement.GetProperty("code").GetString());
+        Assert.Contains(
+            "Azure sign-in required",
+            response.Headers.WwwAuthenticate.ToString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RegistrationValidationRequiresSecurityAdmin()
     {
         using var reader = CreateAuthenticatedClient(OrchestratorRoles.Reader);
@@ -629,6 +702,14 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                     services.AddSingleton<
                         IDeploymentObservationService,
                         TestDeploymentObservationService>();
+                    services.RemoveAll<IAzureDelegatedTokenValidator>();
+                    services.AddSingleton<
+                        IAzureDelegatedTokenValidator,
+                        TestAzureTokenValidator>();
+                    services.RemoveAll<IAzureResourceDiscovery>();
+                    services.AddSingleton<
+                        IAzureResourceDiscovery,
+                        TestAzureResourceDiscovery>();
                     services.AddAuthentication(
                             options =>
                             {
@@ -706,6 +787,70 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                 deploymentId,
                 cancellationToken)
                 ?? throw new InvalidOperationException();
+        }
+    }
+
+    private sealed class TestAzureTokenValidator
+        : IAzureDelegatedTokenValidator
+    {
+        public Task<ValidatedAzureIdentity> ValidateAsync(
+            string accessToken,
+            ClaimsPrincipal orchestratorUser,
+            string authorizedClientId,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(
+                new ValidatedAzureIdentity(
+                    orchestratorUser.FindFirstValue("tid")!,
+                    orchestratorUser.FindFirstValue("oid")!,
+                    DateTimeOffset.UtcNow.AddMinutes(10)));
+        }
+    }
+
+    private sealed class TestAzureResourceDiscovery : IAzureResourceDiscovery
+    {
+        public static Guid SubscriptionId { get; } =
+            Guid.Parse("00000000-0000-0000-0000-000000000777");
+
+        public Task<IReadOnlyList<AzureSubscription>> ListSubscriptionsAsync(
+            AzureAccessTokenSession session,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<AzureSubscription>>(
+                [
+                    new(
+                        SubscriptionId,
+                        "Integration subscription",
+                        "Enabled",
+                        $"/subscriptions/{SubscriptionId}",
+                        "2022-12-01"),
+                ]);
+        }
+
+        public Task<IReadOnlyList<AzureResource>> ListResourcesAsync(
+            AzureAccessTokenSession session,
+            Guid subscriptionId,
+            string? resourceGroup,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (subscriptionId != SubscriptionId)
+            {
+                throw new AzureScopeDeniedException();
+            }
+
+            return Task.FromResult<IReadOnlyList<AzureResource>>(
+                [
+                    new(
+                        $"/subscriptions/{SubscriptionId}/resourceGroups/fsp/"
+                            + "providers/Microsoft.ContainerService/managedClusters/aks",
+                        "aks",
+                        "Microsoft.ContainerService/managedClusters",
+                        "swedencentral",
+                        "2021-04-01"),
+                ]);
         }
     }
 }
