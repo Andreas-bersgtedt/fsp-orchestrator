@@ -46,6 +46,12 @@ const AzureDiscovery = lazy(async () => {
   const module = await import('./azure/AzureDiscovery.tsx')
   return { default: module.AzureDiscovery }
 })
+const DeploymentProfilePage = lazy(async () => {
+  const module = await import(
+    './deployments/DeploymentProfilePage.tsx'
+  )
+  return { default: module.DeploymentProfilePage }
+})
 
 type HealthResponse = {
   status: string
@@ -215,6 +221,16 @@ export default function App({
 
           {authentication.kind === 'signed-in' &&
           authentication.session.permissions.DeploymentAdmin ? (
+            <Suspense fallback={<Spinner label="Loading deployment profile" />}>
+              <DeploymentProfilePage
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
+          authentication.session.permissions.DeploymentAdmin ? (
             <Suspense fallback={<Spinner label="Loading Azure discovery" />}>
               <AzureDiscovery
                 acquireAccessToken={authentication.acquireAccessToken}
@@ -261,13 +277,15 @@ export default function App({
                       <Button
                         appearance="primary"
                         disabled={
-                          !allowed || workflow.title === 'Deploy to Azure'
+                          !allowed
                         }
                         onClick={() => {
                           const target =
                             workflow.title === 'Run prerequisites'
                               ? 'prerequisites'
-                              : 'register-deployment'
+                              : workflow.title === 'Deploy to Azure'
+                                ? 'deployment-profile'
+                                : 'register-deployment'
                           document
                             .getElementById(target)
                             ?.scrollIntoView({ behavior: 'smooth' })

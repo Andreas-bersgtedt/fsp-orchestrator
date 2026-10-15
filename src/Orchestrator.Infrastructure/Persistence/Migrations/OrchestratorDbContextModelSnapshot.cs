@@ -75,6 +75,55 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditEvents", (string)null);
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentApprovalEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorObjectId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorTenantId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CreateCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DeleteCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("InvalidatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ModifyCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("PreviewId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProfileFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId", "ApprovedAt");
+
+                    b.ToTable("DeploymentApprovals", (string)null);
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -124,6 +173,132 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Deployments", (string)null);
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentPreviewEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CreateCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DeleteCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ModifyCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("PrerequisiteRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProfileFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ValidationCorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WhatIfCorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId", "CreatedAt");
+
+                    b.ToTable("DeploymentPreviews", (string)null);
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentProfileEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CurrentApprovalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CurrentPreviewId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PrerequisiteRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProfileJson")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedAt");
+
+                    b.ToTable("DeploymentProfiles", (string)null);
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentWhatIfChangeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AfterJson")
+                        .HasMaxLength(65536)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BeforeJson")
+                        .HasMaxLength(65536)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeltaJson")
+                        .HasMaxLength(65536)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PreviewId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResourceId")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreviewId", "ResourceId");
+
+                    b.ToTable("DeploymentWhatIfChanges", (string)null);
                 });
 
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>
@@ -403,6 +578,39 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.ToTable("PrerequisiteRuns", (string)null);
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentApprovalEntity", b =>
+                {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentProfileEntity", "Profile")
+                        .WithMany("Approvals")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentPreviewEntity", b =>
+                {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentProfileEntity", "Profile")
+                        .WithMany("Previews")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentWhatIfChangeEntity", b =>
+                {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentPreviewEntity", "Preview")
+                        .WithMany("Changes")
+                        .HasForeignKey("PreviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Preview");
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>
                 {
                     b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", "Deployment")
@@ -469,6 +677,18 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.Navigation("Jobs");
 
                     b.Navigation("Observations");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentPreviewEntity", b =>
+                {
+                    b.Navigation("Changes");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentProfileEntity", b =>
+                {
+                    b.Navigation("Approvals");
+
+                    b.Navigation("Previews");
                 });
 
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>

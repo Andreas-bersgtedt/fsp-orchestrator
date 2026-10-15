@@ -50,6 +50,8 @@ builder.Services.AddSingleton<IPrerequisiteErrorReporter, PrerequisiteErrorRepor
 builder.Services.AddSingleton<IPrerequisiteEngine, PrerequisiteEngine>();
 builder.Services.AddSingleton<IPrerequisiteGate, PrerequisiteGate>();
 builder.Services.AddSingleton<IPrerequisiteRunCoordinator, PrerequisiteRunCoordinator>();
+builder.Services.AddSingleton<IDeploymentProfileValidator, DeploymentProfileValidator>();
+builder.Services.AddSingleton<IDeploymentProfileService, DeploymentProfileService>();
 builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<
@@ -78,6 +80,22 @@ builder.Services.AddSingleton<IAzurePrerequisiteProbe>(
     provider => new AzurePrerequisiteProbe(
         provider.GetRequiredService<IHttpClientFactory>()
             .CreateClient(nameof(AzureResourceDiscovery)),
+        provider.GetRequiredService<IAzureTokenSessionStore>()));
+builder.Services.AddHttpClient(nameof(ArmDeploymentPreviewGateway), client =>
+{
+    client.BaseAddress = new Uri("https://management.azure.com/");
+    client.Timeout = TimeSpan.FromMinutes(3);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("FspOrchestrator/1.0");
+}).ConfigurePrimaryHttpMessageHandler(
+    () => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        ConnectTimeout = TimeSpan.FromSeconds(10),
+    });
+builder.Services.AddSingleton<IArmDeploymentPreviewGateway>(
+    provider => new ArmDeploymentPreviewGateway(
+        provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(nameof(ArmDeploymentPreviewGateway)),
         provider.GetRequiredService<IAzureTokenSessionStore>()));
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddSingleton<IFspCredentialResolver, AzureKeyVaultCredentialResolver>();
@@ -165,6 +183,7 @@ api.MapDatabase();
 api.MapPrerequisites();
 api.MapDeployments();
 api.MapAzure();
+api.MapDeploymentProfiles();
 app.MapBootstrap();
 api.MapMethods(
         "/{**path}",

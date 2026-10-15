@@ -11,6 +11,9 @@ namespace Fsp.Orchestrator.Api.Endpoints;
 
 public static class AzureEndpoints
 {
+    internal static IResult SignInRequiredProblem(HttpContext httpContext) =>
+        SignInRequired(httpContext);
+
     public static RouteGroupBuilder MapAzure(this RouteGroupBuilder endpoints)
     {
         endpoints.MapPost(

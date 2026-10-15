@@ -305,6 +305,107 @@ public sealed class PersistenceTests
         Assert.Equal("azure.sign_in_required", entity.SafeOutput);
     }
 
+    [Fact]
+    public async Task ChangingProfileInvalidatesPrerequisitePreviewAndApproval()
+    {
+        await using var fixture = await PersistenceFixture.CreateAsync();
+        var profile = DeploymentProfile();
+        var fingerprint = DeploymentProfileFingerprint.Compute(profile);
+        await fixture.Profiles.SaveAsync(
+            profile,
+            fingerprint,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+        var preview = await fixture.Profiles.SavePreviewAsync(
+            profile.Id,
+            fingerprint,
+            Guid.NewGuid(),
+            new ArmDeploymentPreview(
+                "validation-correlation",
+                "what-if-correlation",
+                [
+                    new DeploymentWhatIfChange(
+                        "/subscriptions/sub/resourceGroups/rg/providers/type/name",
+                        DeploymentChangeType.Create,
+                        null,
+                        """{"name":"created"}""",
+                        null),
+                    new DeploymentWhatIfChange(
+                        "/subscriptions/sub/resourceGroups/rg/providers/type/modified",
+                        DeploymentChangeType.Modify,
+                        """{"sku":"old"}""",
+                        """{"sku":"new"}""",
+                        """{"path":"sku"}"""),
+                    new DeploymentWhatIfChange(
+                        "/subscriptions/sub/resourceGroups/rg/providers/type/deleted",
+                        DeploymentChangeType.Delete,
+                        """{"name":"deleted"}""",
+                        null,
+                        null),
+                ]),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+        var approval = await fixture.Profiles.ApproveAsync(
+            profile.Id,
+            preview.Id,
+            new DeploymentActor(
+                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString()),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        var changed = profile with { NodeCount = profile.NodeCount + 1 };
+        var document = await fixture.Profiles.SaveAsync(
+            changed,
+            DeploymentProfileFingerprint.Compute(changed),
+            DateTimeOffset.UtcNow.AddSeconds(1),
+            CancellationToken.None);
+
+        Assert.Equal(1, approval.CreateCount);
+        Assert.Equal(1, approval.ModifyCount);
+        Assert.Equal(1, approval.DeleteCount);
+        Assert.Null(document.PrerequisiteRunId);
+        Assert.Null(document.CurrentPreviewId);
+        Assert.Null(document.CurrentApprovalId);
+        Assert.Null(
+            await fixture.Profiles.GetPreviewAsync(
+                profile.Id,
+                CancellationToken.None));
+        Assert.Null(
+            await fixture.Profiles.GetApprovalAsync(
+                profile.Id,
+                CancellationToken.None));
+        await using var context = await fixture.ContextFactory.CreateDbContextAsync();
+        var invalidated = await context.DeploymentApprovals
+            .SingleAsync(item => item.Id == approval.Id);
+        Assert.NotNull(invalidated.InvalidatedAt);
+    }
+
+    private static DeploymentProfile DeploymentProfile() =>
+        new(
+            Guid.NewGuid(),
+            "Production FSP",
+            Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            "fsp-rg",
+            "fsp-deployment",
+            "swedencentral",
+            "1.32.7",
+            "Standard_D4s_v5",
+            3,
+            12,
+            "fsp-aks",
+            "fsp-vnet",
+            "aks-subnet",
+            "10.0.0.0/16",
+            "10.0.0.0/24",
+            "10.1.0.0/16",
+            "10.2.0.0/16",
+            "10.2.0.10",
+            "privatelink.swedencentral.azmk8s.io",
+            null,
+            null,
+            null);
+
     private sealed class PersistenceFixture : IAsyncDisposable
     {
         private readonly ServiceProvider provider;
@@ -326,6 +427,9 @@ public sealed class PersistenceTests
 
         public IDeploymentObservationStore Observations =>
             provider.GetRequiredService<IDeploymentObservationStore>();
+
+        public IDeploymentProfileStore Profiles =>
+            provider.GetRequiredService<IDeploymentProfileStore>();
 
         public IAuditMetadataStore Audit =>
             provider.GetRequiredService<IAuditMetadataStore>();

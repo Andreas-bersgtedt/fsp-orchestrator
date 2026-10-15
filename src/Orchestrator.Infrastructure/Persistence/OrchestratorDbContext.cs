@@ -25,6 +25,18 @@ public sealed class OrchestratorDbContext(
     internal DbSet<PrerequisiteResultEntity> PrerequisiteResults =>
         Set<PrerequisiteResultEntity>();
 
+    internal DbSet<DeploymentProfileEntity> DeploymentProfiles =>
+        Set<DeploymentProfileEntity>();
+
+    internal DbSet<DeploymentPreviewEntity> DeploymentPreviews =>
+        Set<DeploymentPreviewEntity>();
+
+    internal DbSet<DeploymentWhatIfChangeEntity> DeploymentWhatIfChanges =>
+        Set<DeploymentWhatIfChangeEntity>();
+
+    internal DbSet<DeploymentApprovalEntity> DeploymentApprovals =>
+        Set<DeploymentApprovalEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DeploymentEntity>(
@@ -153,6 +165,64 @@ public sealed class OrchestratorDbContext(
                 entity.HasOne(item => item.Run)
                     .WithMany(item => item.Results)
                     .HasForeignKey(item => item.RunId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        modelBuilder.Entity<DeploymentProfileEntity>(
+            entity =>
+            {
+                entity.ToTable("DeploymentProfiles");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.ProfileJson).HasMaxLength(32_768);
+                entity.Property(item => item.Fingerprint).HasMaxLength(64);
+                entity.Property(item => item.Revision).IsConcurrencyToken();
+                entity.HasIndex(item => item.UpdatedAt);
+            });
+        modelBuilder.Entity<DeploymentPreviewEntity>(
+            entity =>
+            {
+                entity.ToTable("DeploymentPreviews");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.ProfileFingerprint).HasMaxLength(64);
+                entity.Property(item => item.ValidationCorrelationId)
+                    .HasMaxLength(100);
+                entity.Property(item => item.WhatIfCorrelationId)
+                    .HasMaxLength(100);
+                entity.HasIndex(item => new { item.ProfileId, item.CreatedAt });
+                entity.HasOne(item => item.Profile)
+                    .WithMany(item => item.Previews)
+                    .HasForeignKey(item => item.ProfileId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        modelBuilder.Entity<DeploymentWhatIfChangeEntity>(
+            entity =>
+            {
+                entity.ToTable("DeploymentWhatIfChanges");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.ResourceId).HasMaxLength(2_048);
+                entity.Property(item => item.ChangeType)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+                entity.Property(item => item.BeforeJson).HasMaxLength(65_536);
+                entity.Property(item => item.AfterJson).HasMaxLength(65_536);
+                entity.Property(item => item.DeltaJson).HasMaxLength(65_536);
+                entity.HasIndex(item => new { item.PreviewId, item.ResourceId });
+                entity.HasOne(item => item.Preview)
+                    .WithMany(item => item.Changes)
+                    .HasForeignKey(item => item.PreviewId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        modelBuilder.Entity<DeploymentApprovalEntity>(
+            entity =>
+            {
+                entity.ToTable("DeploymentApprovals");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.ProfileFingerprint).HasMaxLength(64);
+                entity.Property(item => item.ActorTenantId).HasMaxLength(100);
+                entity.Property(item => item.ActorObjectId).HasMaxLength(100);
+                entity.HasIndex(item => new { item.ProfileId, item.ApprovedAt });
+                entity.HasOne(item => item.Profile)
+                    .WithMany(item => item.Approvals)
+                    .HasForeignKey(item => item.ProfileId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
     }
