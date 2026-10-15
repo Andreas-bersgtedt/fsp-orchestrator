@@ -1,4 +1,6 @@
 using System.Text;
+using System.Security.Claims;
+using Fsp.Orchestrator.Api.Azure;
 using Fsp.Orchestrator.Application.Deployments;
 using Fsp.Orchestrator.Application.Persistence;
 using Fsp.Orchestrator.Infrastructure.Persistence;
@@ -255,6 +257,52 @@ public sealed class PersistenceTests
             state!.LatestAttempt!.Status);
         Assert.Equal(successfulAt, state.LastSuccessfulAt);
         Assert.Equal("ok", Assert.Single(state.LastSuccessfulValues).Version);
+    }
+
+    [Fact]
+    public async Task MissingAzureTokenPausesRunningJob()
+    {
+        await using var fixture = await PersistenceFixture.CreateAsync();
+        var pending = await fixture.Jobs.CreateAsync(
+            new CreateJob(
+                Guid.NewGuid(),
+                null,
+                "azure.discovery",
+                Guid.NewGuid().ToString(),
+                ["discover"]),
+            CancellationToken.None);
+        var running = await fixture.Jobs.TransitionAsync(
+            new TransitionJob(
+                pending.Id,
+                JobStatus.Running,
+                pending.Version,
+                null),
+            CancellationToken.None);
+        var provider = new AzureJobTokenProvider(
+            new InMemoryAzureTokenSessionStore(TimeProvider.System),
+            fixture.Jobs);
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                [
+                    new Claim(
+                        "tid",
+                        "00000000-0000-0000-0000-000000000001"),
+                    new Claim(
+                        "oid",
+                        "00000000-0000-0000-0000-000000000002"),
+                ],
+                "test"));
+
+        await Assert.ThrowsAsync<AzureSignInRequiredException>(
+            () => provider.RequireAsync(
+                running,
+                principal,
+                CancellationToken.None));
+
+        await using var context = await fixture.ContextFactory.CreateDbContextAsync();
+        var entity = await context.Jobs.SingleAsync(job => job.Id == running.Id);
+        Assert.Equal(JobStatus.Paused, entity.Status);
+        Assert.Equal("azure.sign_in_required", entity.SafeOutput);
     }
 
     private sealed class PersistenceFixture : IAsyncDisposable

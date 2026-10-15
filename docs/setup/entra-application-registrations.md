@@ -17,7 +17,13 @@ Create **FSP Orchestrator SPA** with:
 - no client secret or certificate;
 - delegated access to the Orchestrator API
   `orchestrator.access_as_user` scope;
+- Azure Service Management delegated `user_impersonation` for ARM discovery and
+  deployment;
 - Microsoft Graph delegated `User.Read` for owned-application discovery.
+
+Grant tenant consent for Azure Service Management before a DeploymentAdmin uses
+Azure scope discovery. The ARM token is issued to the SPA and handed to the
+loopback API; neither registration receives a client credential.
 
 The setup UI requests `Application.Read.All` only when checking whether selected
 enterprise applications exist. That permission requires tenant admin consent.

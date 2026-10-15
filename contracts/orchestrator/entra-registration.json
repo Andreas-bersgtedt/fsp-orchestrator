@@ -5,6 +5,13 @@
     "redirectUris": [
       "https://localhost:9443/auth/callback"
     ],
+    "requiredDelegatedAccess": [
+      {
+        "resourceAppId": "797f4846-ba00-4fd7-ba43-dac1f8f63013",
+        "scopeId": "41094075-9dad-400e-a0bd-54e686782033",
+        "scope": "user_impersonation"
+      }
+    ],
     "credentialsAllowed": false
   },
   "api": {

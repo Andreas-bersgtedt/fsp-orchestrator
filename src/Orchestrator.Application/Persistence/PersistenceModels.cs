@@ -73,6 +73,7 @@ public enum JobStatus
 {
     Pending,
     Running,
+    Paused,
     Succeeded,
     Failed,
     Cancelled,

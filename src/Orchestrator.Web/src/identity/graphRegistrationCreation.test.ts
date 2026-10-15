@@ -30,6 +30,12 @@ describe('createRecommendedRegistrations', () => {
     expect(requestBodies.join(' ')).not.toContain('passwordCredentials')
     expect(requestBodies.join(' ')).not.toContain('keyCredentials')
     expect(requestBodies.join(' ')).not.toContain('clientSecret')
+    expect(requestBodies.join(' ')).toContain(
+      '797f4846-ba00-4fd7-ba43-dac1f8f63013',
+    )
+    expect(requestBodies.join(' ')).toContain(
+      '41094075-9dad-400e-a0bd-54e686782033',
+    )
   })
 
   it('removes a partially created SPA when API creation fails', async () => {

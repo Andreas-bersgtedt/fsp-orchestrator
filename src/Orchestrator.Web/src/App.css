@@ -103,6 +103,33 @@ main {
   margin-bottom: 64px;
 }
 
+.azure-discovery {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 64px;
+}
+
+.azure-discovery-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding: 0 12px;
+}
+
+.azure-resource-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.azure-resource-list .fui-Card {
+  min-width: 0;
+}
+
+.azure-resource-list .fui-Text {
+  overflow-wrap: anywhere;
+}
+
 .inventory-layout {
   display: grid;
   grid-template-columns: minmax(240px, 0.75fr) minmax(0, 2fr);
@@ -370,7 +397,9 @@ footer {
   }
 
   .inventory-layout,
-  .deployment-metadata {
+  .deployment-metadata,
+  .azure-discovery-fields,
+  .azure-resource-list {
     grid-template-columns: 1fr;
   }
 }

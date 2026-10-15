@@ -121,7 +121,9 @@ internal sealed class JobStore(
             JobStatus.Pending => target is JobStatus.Running or JobStatus.Cancelled,
             JobStatus.Running => target is JobStatus.Succeeded
                 or JobStatus.Failed
+                or JobStatus.Paused
                 or JobStatus.Cancelled,
+            JobStatus.Paused => target is JobStatus.Running or JobStatus.Cancelled,
             JobStatus.Failed => target == JobStatus.Running,
             _ => false,
         };

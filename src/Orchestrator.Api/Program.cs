@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Fsp.Orchestrator.Api.Authentication;
+using Fsp.Orchestrator.Api.Azure;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
@@ -51,6 +52,28 @@ builder.Services.AddSingleton<IPrerequisiteGate, PrerequisiteGate>();
 builder.Services.AddSingleton<IPrerequisiteRunCoordinator, PrerequisiteRunCoordinator>();
 builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
+builder.Services.AddSingleton<
+    IAzureDelegatedTokenValidator,
+    AzureDelegatedTokenValidator>();
+builder.Services.AddSingleton<
+    IAzureTokenSessionStore,
+    InMemoryAzureTokenSessionStore>();
+builder.Services.AddSingleton<IAzureJobTokenProvider, AzureJobTokenProvider>();
+builder.Services.AddHttpClient(nameof(AzureResourceDiscovery), client =>
+{
+    client.BaseAddress = new Uri("https://management.azure.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("FspOrchestrator/1.0");
+}).ConfigurePrimaryHttpMessageHandler(
+    () => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        ConnectTimeout = TimeSpan.FromSeconds(10),
+    });
+builder.Services.AddSingleton<IAzureResourceDiscovery>(
+    provider => new AzureResourceDiscovery(
+        provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(nameof(AzureResourceDiscovery))));
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddSingleton<IFspCredentialResolver, AzureKeyVaultCredentialResolver>();
 builder.Services.AddHttpClient(nameof(FspDeploymentProbe), client =>
@@ -129,6 +152,7 @@ api.MapEntraRegistrations();
 api.MapDatabase();
 api.MapPrerequisites();
 api.MapDeployments();
+api.MapAzure();
 app.MapBootstrap();
 api.MapMethods(
         "/{**path}",
