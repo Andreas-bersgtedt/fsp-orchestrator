@@ -64,6 +64,7 @@ export async function createRecommendedRegistrations(
       },
     )
     createdApplications.push(spa.id)
+    await addOwner(spa.id, userObjectId, accessToken, fetchImplementation)
 
     const scopeId = crypto.randomUUID()
     const appRoles = roles.map((role) => ({
@@ -105,6 +106,7 @@ export async function createRecommendedRegistrations(
       },
     )
     createdApplications.push(api.id)
+    await addOwner(api.id, userObjectId, accessToken, fetchImplementation)
 
     await graphRequest(
       `/applications/${api.id}`,
@@ -270,6 +272,25 @@ async function createServicePrincipal(
     {
       method: 'POST',
       body: { appId },
+    },
+  )
+}
+
+async function addOwner(
+  applicationObjectId: string,
+  userObjectId: string,
+  accessToken: string,
+  fetchImplementation: typeof fetch,
+) {
+  await graphRequest(
+    `/applications/${applicationObjectId}/owners/$ref`,
+    accessToken,
+    fetchImplementation,
+    {
+      method: 'POST',
+      body: {
+        '@odata.id': `${graphRoot}/directoryObjects/${userObjectId}`,
+      },
     },
   )
 }

@@ -130,7 +130,10 @@ function normalizeApplication(
   application: GraphApplication,
 ): OwnedEntraApplication {
   if (!application.id || !application.appId) {
-    throw new Error('Microsoft Graph returned an application without stable IDs.')
+    throw new Error(
+      'Microsoft Graph returned limited application metadata. Grant delegated ' +
+        'Application.Read.All admin consent to the SPA registration and retry.',
+    )
   }
 
   return {

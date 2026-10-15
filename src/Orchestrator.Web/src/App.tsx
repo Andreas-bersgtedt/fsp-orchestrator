@@ -136,6 +136,7 @@ export default function App({
                 account={authentication.account}
                 acquireAccessToken={authentication.acquireAccessToken}
                 bootstrap={authentication.bootstrap}
+                interactionInProgress={authentication.interactionInProgress}
               />
             </Suspense>
           ) : null}
