@@ -17,6 +17,64 @@ GET {{baseUrl}}/api/session
 Accept: application/json
 Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
 
+### Validate selected Entra application registrations
+POST {{baseUrl}}/api/identity/registrations/validate
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "signedInTenantId": "00000000-0000-0000-0000-000000000001",
+  "spa": {
+    "objectId": "00000000-0000-0000-0000-000000000010",
+    "appId": "00000000-0000-0000-0000-000000000011",
+    "displayName": "FSP Orchestrator SPA",
+    "signInAudience": "AzureADMyOrg",
+    "spaRedirectUris": ["https://localhost:9443/auth/callback"],
+    "identifierUris": [],
+    "delegatedScopes": [],
+    "appRoles": [],
+    "preAuthorizedApplications": [],
+    "passwordCredentialCount": 0,
+    "keyCredentialCount": 0
+  },
+  "api": {
+    "objectId": "00000000-0000-0000-0000-000000000020",
+    "appId": "00000000-0000-0000-0000-000000000021",
+    "displayName": "FSP Orchestrator API",
+    "signInAudience": "AzureADMyOrg",
+    "spaRedirectUris": [],
+    "identifierUris": ["api://00000000-0000-0000-0000-000000000021"],
+    "delegatedScopes": [
+      {
+        "id": "00000000-0000-0000-0000-000000000030",
+        "value": "orchestrator.access_as_user",
+        "type": "User",
+        "isEnabled": true
+      }
+    ],
+    "appRoles": [
+      { "id": "00000000-0000-0000-0000-000000000031", "value": "Reader", "allowedMemberTypes": ["User"], "isEnabled": true },
+      { "id": "00000000-0000-0000-0000-000000000032", "value": "Operator", "allowedMemberTypes": ["User"], "isEnabled": true },
+      { "id": "00000000-0000-0000-0000-000000000033", "value": "ConfigurationAdmin", "allowedMemberTypes": ["User"], "isEnabled": true },
+      { "id": "00000000-0000-0000-0000-000000000034", "value": "DeploymentAdmin", "allowedMemberTypes": ["User"], "isEnabled": true },
+      { "id": "00000000-0000-0000-0000-000000000035", "value": "SecurityAdmin", "allowedMemberTypes": ["User"], "isEnabled": true }
+    ],
+    "preAuthorizedApplications": [
+      {
+        "appId": "00000000-0000-0000-0000-000000000011",
+        "delegatedPermissionIds": ["00000000-0000-0000-0000-000000000030"]
+      }
+    ],
+    "passwordCredentialCount": 0,
+    "keyCredentialCount": 0
+  },
+  "spaServicePrincipalExists": true,
+  "apiServicePrincipalExists": true,
+  "signedInUserRoles": ["SecurityAdmin"]
+}
+
 ### Get the OpenAPI document
 GET {{baseUrl}}/openapi/v1.json
 Accept: application/json

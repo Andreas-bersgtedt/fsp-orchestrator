@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <SpaSource Include="$(SpaRoot)index.html" />
-    <SpaSource Include="$(SpaRoot)package-lock.json" />
     <SpaSource Include="$(SpaRoot)package.json" />
     <SpaSource Include="$(SpaRoot)src\**\*" />
     <SpaSource Include="$(SpaRoot)tsconfig*.json" />
@@ -31,11 +30,18 @@
   </ItemGroup>
 
   <Target
+    Name="RestoreSpaDependencies"
+    BeforeTargets="BuildSpa"
+    Inputs="$(SpaRoot)package-lock.json"
+    Outputs="$(SpaRoot)node_modules\.package-lock.json">
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(SpaRoot)" />
+  </Target>
+
+  <Target
     Name="BuildSpa"
     BeforeTargets="Build"
     Inputs="@(SpaSource)"
     Outputs="$(SpaDist)index.html">
-    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(SpaRoot)" />
     <Exec Command="npm run build" WorkingDirectory="$(SpaRoot)" />
   </Target>
 

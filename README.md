@@ -162,6 +162,8 @@ variables. These are public identifiers; the SPA has no client secret. Until
 they are configured, the shell reports that Entra setup is required and
 protected API routes return `401`. See the
 [authentication decision](./docs/architecture/entra-user-authentication.md).
+The exact SPA/API registration shape and validation codes are documented in
+[Microsoft Entra application registrations](./docs/setup/entra-application-registrations.md).
 
 The engineering sequence is:
 

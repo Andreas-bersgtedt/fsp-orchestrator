@@ -237,6 +237,28 @@ function SessionController({
     })
   }
 
+  async function acquireAccessToken(scopes: string[]) {
+    if (!account) {
+      throw new Error('No signed-in Microsoft account is available.')
+    }
+
+    try {
+      const token = await instance.acquireTokenSilent({
+        account,
+        scopes,
+      })
+      return token.accessToken
+    } catch (tokenError) {
+      if (tokenError instanceof InteractionRequiredAuthError) {
+        await instance.acquireTokenRedirect({
+          account,
+          scopes,
+        })
+      }
+      throw tokenError
+    }
+  }
+
   async function signOut() {
     await clearSessionAndLogout(
       instance,
@@ -255,7 +277,13 @@ function SessionController({
   } else if (inProgress !== InteractionStatus.None) {
     authentication = { kind: 'signing-in' }
   } else if (session && account && isAuthenticated) {
-    authentication = { kind: 'signed-in', session, signOut }
+    authentication = {
+      kind: 'signed-in',
+      session,
+      apiScope: configuration.apiScope,
+      acquireAccessToken,
+      signOut,
+    }
   } else {
     authentication = { kind: 'signed-out', signIn }
   }

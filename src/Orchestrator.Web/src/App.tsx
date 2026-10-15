@@ -14,9 +14,14 @@ import {
   Title2,
   webLightTheme,
 } from '@fluentui/react-components'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { AuthenticationState } from './auth/authTypes.ts'
 import './App.css'
+
+const RegistrationSetup = lazy(async () => {
+  const module = await import('./identity/RegistrationSetup.tsx')
+  return { default: module.RegistrationSetup }
+})
 
 type HealthResponse = {
   status: string
@@ -120,6 +125,17 @@ export default function App({
           </section>
 
           <AuthenticationPanel authentication={authentication} />
+
+          {authentication.kind === 'signed-in' &&
+          authentication.session.permissions.SecurityAdmin ? (
+            <Suspense fallback={<Spinner label="Loading Entra registration setup" />}>
+              <RegistrationSetup
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+                session={authentication.session}
+              />
+            </Suspense>
+          ) : null}
 
           <section aria-labelledby="workflow-heading">
             <div className="section-heading">
