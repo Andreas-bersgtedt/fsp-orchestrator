@@ -82,7 +82,28 @@ function Assert-HttpsReady {
     } while ([DateTimeOffset]::UtcNow -lt $deadline)
 
     $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
-    throw "The installed HTTPS service did not become healthy. Service=$($service.Status); LastError=$($lastError.Exception.Message)"
+    $serviceDetails = Get-CimInstance Win32_Service -Filter "Name='$serviceName'"
+    $exceptionMessages = [Collections.Generic.List[string]]::new()
+    $currentException = $lastError.Exception
+    while ($null -ne $currentException) {
+        $exceptionMessages.Add($currentException.Message)
+        $currentException = $currentException.InnerException
+    }
+
+    $eventMessages = Get-WinEvent -FilterHashtable @{
+        LogName = 'Application'
+        StartTime = [DateTime]::Now.AddMinutes(-5)
+    } -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.ProviderName -in '.NET Runtime', 'Application Error', 'FSP Orchestrator'
+        } |
+        Select-Object -First 10 |
+        ForEach-Object { "$($_.ProviderName): $($_.Message)" }
+    $diagnostic = "The installed HTTPS service did not become healthy. " +
+        "Service=$($service.Status); ProcessId=$($serviceDetails.ProcessId); " +
+        "Errors=$($exceptionMessages -join ' -> '); " +
+        "Events=$($eventMessages -join ' | ')"
+    throw $diagnostic
 }
 
 function Assert-CertificateTrusted {
