@@ -6,7 +6,9 @@ describe('createRecommendedRegistrations', () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(json({ id: 'spa-object', appId: crypto.randomUUID(), displayName: 'SPA' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(json({ id: 'api-object', appId: crypto.randomUUID(), displayName: 'API' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(json({ id: 'spa-sp', appId: 'spa-app' }))
@@ -36,6 +38,7 @@ describe('createRecommendedRegistrations', () => {
       .mockResolvedValueOnce(
         json({ id: 'spa-object', appId: crypto.randomUUID(), displayName: 'SPA' }),
       )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(new Response('{}', { status: 403 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
 

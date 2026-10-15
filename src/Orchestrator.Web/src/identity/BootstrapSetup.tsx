@@ -14,11 +14,13 @@ import {
   Title2,
 } from '@fluentui/react-components'
 import { PublicClientApplication } from '@azure/msal-browser'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type {
   BootstrapAuthenticationConfiguration,
   BootstrapOperatorAccount,
 } from '../auth/authTypes.ts'
+import { savePendingCandidateSetup } from '../auth/candidateSetup.ts'
+import { clearStaleMsalInteraction } from '../auth/msalInteraction.ts'
 import {
   discoverOwnedApplications,
   servicePrincipalExists,
@@ -29,30 +31,21 @@ import {
   type CreatedRegistrationPair,
 } from './graphRegistrationCreation.ts'
 
-type CommitResponse = {
-  committed: boolean
-  restartRequired: boolean
-  message: string
-}
-
 export function BootstrapSetup({
   account,
   acquireAccessToken,
   bootstrap,
+  interactionInProgress,
 }: {
   account: BootstrapOperatorAccount
   acquireAccessToken: (scopes: string[]) => Promise<string>
   bootstrap: BootstrapAuthenticationConfiguration
+  interactionInProgress: boolean
 }) {
   const [applications, setApplications] = useState<OwnedEntraApplication[]>([])
   const [spaAppId, setSpaAppId] = useState('')
   const [apiAppId, setApiAppId] = useState('')
   const [createdPair, setCreatedPair] = useState<CreatedRegistrationPair>()
-  const [candidateClientState, setCandidateClientState] = useState<{
-    key: string
-    client: PublicClientApplication
-  }>()
-  const [commit, setCommit] = useState<CommitResponse>()
   const [discoveryCompleted, setDiscoveryCompleted] = useState(false)
   const [status, setStatus] = useState<
     'idle' | 'discovering' | 'creating' | 'committing'
@@ -66,43 +59,6 @@ export function BootstrapSetup({
     () => applications.find((application) => application.appId === apiAppId),
     [apiAppId, applications],
   )
-  const candidateKey =
-    spa && api && spa.appId !== api.appId
-      ? `${account.tenantId}:${spa.appId}:${api.appId}`
-      : undefined
-  const candidateClient =
-    candidateClientState && candidateClientState.key === candidateKey
-      ? candidateClientState.client
-      : undefined
-
-  useEffect(() => {
-    let active = true
-    if (!spa || !candidateKey) {
-      return () => {
-        active = false
-      }
-    }
-
-    const client = new PublicClientApplication({
-      auth: {
-        authority: `https://login.microsoftonline.com/${account.tenantId}`,
-        clientId: spa.appId,
-        redirectUri: 'https://localhost:9443/auth/callback',
-      },
-      cache: {
-        cacheLocation: 'sessionStorage',
-      },
-    })
-    void client.initialize().then(() => {
-      if (active) {
-        setCandidateClientState({ key: candidateKey, client })
-      }
-    })
-    return () => {
-      active = false
-    }
-  }, [account.tenantId, candidateKey, spa])
-
   async function discover() {
     await run('discovering', async () => {
       const token = await acquireAccessToken(bootstrap.discoveryScopes)
@@ -129,16 +85,11 @@ export function BootstrapSetup({
   }
 
   async function commitConfiguration() {
-    if (!spa || !api || !candidateClient) {
+    if (!spa || !api) {
       return
     }
 
     await run('committing', async () => {
-      const apiScope = `api://${api.appId}/orchestrator.access_as_user`
-      const candidateTokenPromise = candidateClient.loginPopup({
-        prompt: 'select_account',
-        scopes: [apiScope],
-      })
       const graphToken = await acquireAccessToken(bootstrap.creationScopes)
       const pair =
         createdPair ??
@@ -155,37 +106,30 @@ export function BootstrapSetup({
           ),
           signedInUserRoles: ['SecurityAdmin'],
         } satisfies CreatedRegistrationPair)
-      const candidateToken = await candidateTokenPromise
-      const response = await fetch('/api/bootstrap/identity/commit', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${candidateToken.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          candidate: {
-            tenantId: account.tenantId,
-            spaClientId: spa.appId,
-            apiClientId: api.appId,
-            scopeName: 'orchestrator.access_as_user',
-          },
-          registration: {
-            tenantId: account.tenantId,
-            signedInTenantId: account.tenantId,
-            spa: pair.spa,
-            api: pair.api,
-            spaServicePrincipalExists: pair.spaServicePrincipalExists,
-            apiServicePrincipalExists: pair.apiServicePrincipalExists,
-            signedInUserRoles: pair.signedInUserRoles,
-          },
-        }),
+      const apiScope = `api://${api.appId}/orchestrator.access_as_user`
+      savePendingCandidateSetup({
+        tenantId: account.tenantId,
+        spaClientId: spa.appId,
+        apiClientId: api.appId,
+        apiScope,
+        pair,
       })
-      if (!response.ok) {
-        throw new Error(`Identity configuration commit returned ${response.status}.`)
-      }
-      setCommit((await response.json()) as CommitResponse)
-      await waitForRestart()
+      const candidate = new PublicClientApplication({
+        auth: {
+          authority: `https://login.microsoftonline.com/${account.tenantId}`,
+          clientId: spa.appId,
+          redirectUri: 'https://localhost:9443/auth/callback',
+        },
+        cache: {
+          cacheLocation: 'sessionStorage',
+        },
+      })
+      await candidate.initialize()
+      clearStaleMsalInteraction()
+      await candidate.loginRedirect({
+        prompt: 'select_account',
+        scopes: [apiScope],
+      })
     })
   }
 
@@ -220,14 +164,14 @@ export function BootstrapSetup({
       <div className="bootstrap-actions">
         <Button
           appearance="secondary"
-          disabled={status !== 'idle'}
+          disabled={status !== 'idle' || interactionInProgress}
           onClick={() => void discover()}
         >
           Discover owned registrations
         </Button>
         <Button
           appearance="primary"
-          disabled={status !== 'idle'}
+          disabled={status !== 'idle' || interactionInProgress}
           onClick={() => void create()}
         >
           Create recommended registrations
@@ -289,9 +233,9 @@ export function BootstrapSetup({
               disabled={
                 !spa ||
                 !api ||
-                !candidateClient ||
                 spa.appId === api.appId ||
-                status !== 'idle'
+                status !== 'idle' ||
+                interactionInProgress
               }
               onClick={() => void commitConfiguration()}
             >
@@ -311,14 +255,6 @@ export function BootstrapSetup({
         </MessageBar>
       ) : null}
 
-      {commit ? (
-        <MessageBar intent="success">
-          <MessageBarBody>
-            <MessageBarTitle>Identity configuration committed</MessageBarTitle>
-            {commit.message}
-          </MessageBarBody>
-        </MessageBar>
-      ) : null}
     </section>
   )
 }
@@ -334,31 +270,6 @@ async function graphMe(accessToken: string) {
     throw new Error(`Microsoft Graph user lookup returned ${response.status}.`)
   }
   return (await response.json()) as { id: string }
-}
-
-async function waitForRestart() {
-  const deadline = Date.now() + 60_000
-  await new Promise((resolve) => setTimeout(resolve, 1_000))
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch('/api/auth/config', {
-        headers: { Accept: 'application/json' },
-      })
-      if (response.ok) {
-        const configuration = (await response.json()) as { configured: boolean }
-        if (configuration.configured) {
-          globalThis.location.reload()
-          return
-        }
-      }
-    } catch {
-      // The old process has released the port and the replacement is starting.
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1_000))
-  }
-  throw new Error(
-    'Identity configuration was committed, but Orchestrator did not restart within 60 seconds.',
-  )
 }
 
 function errorMessage(error: unknown) {

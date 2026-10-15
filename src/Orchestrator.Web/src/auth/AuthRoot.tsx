@@ -13,12 +13,15 @@ import {
 import { useEffect, useState } from 'react'
 import App from '../App.tsx'
 import { BootstrapAuthRoot } from './BootstrapAuthRoot.tsx'
+import { CandidateCommitRoot } from './CandidateCommitRoot.tsx'
 import type {
   AuthenticationConfiguration,
   AuthenticationState,
   OperatorSession,
 } from './authTypes.ts'
+import { loadPendingCandidateSetup } from './candidateSetup.ts'
 import { clearSessionAndLogout } from './logout.ts'
+import { clearStaleMsalInteraction } from './msalInteraction.ts'
 
 type BootstrapState =
   | { kind: 'loading' }
@@ -27,6 +30,7 @@ type BootstrapState =
 
 export function AuthRoot() {
   const [bootstrap, setBootstrap] = useState<BootstrapState>({ kind: 'loading' })
+  const pendingCandidate = loadPendingCandidateSetup()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -62,6 +66,10 @@ export function AuthRoot() {
     void loadConfiguration()
     return () => controller.abort()
   }, [])
+
+  if (pendingCandidate) {
+    return <CandidateCommitRoot pending={pendingCandidate} />
+  }
 
   if (bootstrap.kind === 'loading') {
     return <App authentication={{ kind: 'loading' }} />
@@ -202,6 +210,7 @@ function SessionController({
           return
         }
         if (sessionError instanceof InteractionRequiredAuthError) {
+          clearStaleMsalInteraction()
           await instance.acquireTokenRedirect({
             account: activeAccount,
             scopes: [configuration.apiScope],
@@ -231,6 +240,7 @@ function SessionController({
 
   async function signIn() {
     setError(undefined)
+    clearStaleMsalInteraction()
     await instance.loginRedirect({
       prompt: 'select_account',
       redirectUri: configuration.redirectUri,
@@ -251,6 +261,7 @@ function SessionController({
       return token.accessToken
     } catch (tokenError) {
       if (tokenError instanceof InteractionRequiredAuthError) {
+        clearStaleMsalInteraction()
         await instance.acquireTokenRedirect({
           account,
           scopes,

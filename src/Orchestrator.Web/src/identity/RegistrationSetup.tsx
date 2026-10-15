@@ -64,7 +64,7 @@ export function RegistrationSetup({
     setError(undefined)
     setValidation(undefined)
     try {
-      const token = await acquireAccessToken(['User.Read'])
+      const token = await acquireAccessToken(['Application.Read.All'])
       const discovered = await discoverOwnedApplications(token)
       setApplications(discovered)
       setSpaAppId('')

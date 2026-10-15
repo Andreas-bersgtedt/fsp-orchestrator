@@ -42,6 +42,7 @@ export type AuthenticationState =
       kind: 'bootstrap-signed-in'
       account: BootstrapOperatorAccount
       bootstrap: BootstrapAuthenticationConfiguration
+      interactionInProgress: boolean
       acquireAccessToken: (scopes: string[]) => Promise<string>
       signOut: () => Promise<void>
     }

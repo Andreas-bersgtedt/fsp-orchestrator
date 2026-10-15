@@ -12,6 +12,7 @@ import type {
   AuthenticationState,
 } from './authTypes.ts'
 import { clearSessionAndLogout } from './logout.ts'
+import { clearStaleMsalInteraction } from './msalInteraction.ts'
 
 export function BootstrapAuthRoot({
   configuration,
@@ -113,6 +114,7 @@ function BootstrapSession({
       return result.accessToken
     } catch (tokenError) {
       if (tokenError instanceof InteractionRequiredAuthError) {
+        clearStaleMsalInteraction()
         await instance.acquireTokenRedirect({
           account,
           scopes,
@@ -124,6 +126,7 @@ function BootstrapSession({
 
   async function signIn() {
     setError(undefined)
+    clearStaleMsalInteraction()
     await instance.loginRedirect({
       prompt: 'select_account',
       redirectUri: bootstrap.redirectUri,
@@ -156,6 +159,7 @@ function BootstrapSession({
         username: account.username,
       },
       bootstrap,
+      interactionInProgress: inProgress !== InteractionStatus.None,
       acquireAccessToken,
       signOut,
     }
