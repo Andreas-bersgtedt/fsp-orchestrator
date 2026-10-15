@@ -8,6 +8,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$BaselineMsi = [IO.Path]::GetFullPath($BaselineMsi)
+$UpgradeMsi = [IO.Path]::GetFullPath($UpgradeMsi)
+if (-not (Test-Path $BaselineMsi) -or -not (Test-Path $UpgradeMsi)) {
+    throw 'Baseline and upgrade MSI paths must exist.'
+}
+
 $serviceName = 'FSP Orchestrator'
 $installDirectory = Join-Path $env:ProgramFiles 'FSP Orchestrator'
 $dataDirectory = Join-Path $env:ProgramData 'FspOrchestrator'
