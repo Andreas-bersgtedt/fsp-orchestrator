@@ -19,6 +19,7 @@ public static class DeploymentEndpoints
                 async Task<Ok<DeploymentListResponse>> (
                     IInventoryStore inventoryStore,
                     IDeploymentObservationStore observationStore,
+                    IDeploymentMutationGate mutationGate,
                     DeploymentObservationOptions observationOptions,
                     CancellationToken cancellationToken) =>
                 {
@@ -31,10 +32,16 @@ public static class DeploymentEndpoints
                         var observation = await observationStore.GetStateAsync(
                             deployment.Id,
                             cancellationToken);
+                        var compatibility = await mutationGate.EvaluateAsync(
+                            deployment.Id,
+                            cancellationToken);
                         items.Add(
                             new DeploymentListItemResponse(
                                 Map(deployment),
-                                observation is null ? null : Map(observation)));
+                                observation is null ? null : Map(observation),
+                                compatibility is null
+                                    ? null
+                                    : Map(compatibility)));
                     }
 
                     return TypedResults.Ok(
@@ -148,6 +155,39 @@ public static class DeploymentEndpoints
             .WithDescription(
                 "Returns non-secret job status metadata for one deployment.")
             .Produces<DeploymentJobListResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        endpoints.MapPost(
+                "/deployments/{deploymentId:guid}/mutation-gate",
+                async Task<Results<
+                    Ok<DeploymentCompatibilityResponse>,
+                    Conflict<DeploymentCompatibilityResponse>,
+                    NotFound>> (
+                    Guid deploymentId,
+                    IDeploymentMutationGate mutationGate,
+                    CancellationToken cancellationToken) =>
+                {
+                    var result = await mutationGate.EvaluateAsync(
+                        deploymentId,
+                        cancellationToken);
+                    if (result is null)
+                    {
+                        return TypedResults.NotFound();
+                    }
+
+                    var response = Map(result);
+                    return result.Allowed
+                        ? TypedResults.Ok(response)
+                        : TypedResults.Conflict(response);
+                })
+            .RequireAuthorization(OrchestratorRoles.Operator)
+            .WithName("ValidateDeploymentMutationCompatibility")
+            .WithSummary("Validate deployment compatibility for mutation")
+            .WithDescription(
+                "Blocks mutation when current observed component versions do "
+                + "not match the embedded FSP release manifest.")
+            .Produces<DeploymentCompatibilityResponse>(StatusCodes.Status200OK)
+            .Produces<DeploymentCompatibilityResponse>(StatusCodes.Status409Conflict)
             .Produces(StatusCodes.Status404NotFound);
 
         endpoints.MapPost(
@@ -326,6 +366,21 @@ public static class DeploymentEndpoints
 
     private static ObservedComponentResponse Map(ObservedComponent value) =>
         new(value.Name, value.Version, value.Status);
+
+    private static DeploymentCompatibilityResponse Map(
+        DeploymentCompatibilityResult result) =>
+        new(
+            result.Allowed,
+            result.Status,
+            result.Code,
+            result.Message,
+            result.ObservedAt,
+            result.Mismatches.Select(
+                    mismatch => new ComponentVersionMismatchResponse(
+                        mismatch.Component,
+                        mismatch.ExpectedVersion,
+                        mismatch.ObservedVersion))
+                .ToArray());
 }
 
 /// <summary>Payload for registering an existing FSP deployment.</summary>
@@ -390,7 +445,8 @@ public sealed record DeploymentListResponse(
 /// <summary>Represents one deployment and its observation state.</summary>
 public sealed record DeploymentListItemResponse(
     DeploymentResponse Deployment,
-    DeploymentObservationStateResponse? Observation);
+    DeploymentObservationStateResponse? Observation,
+    DeploymentCompatibilityResponse? Compatibility);
 
 /// <summary>Represents latest and last-successful deployment observations.</summary>
 public sealed record DeploymentObservationStateResponse(
@@ -420,3 +476,18 @@ public sealed record DeploymentJobResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     long Version);
+
+/// <summary>Represents the release-manifest compatibility decision.</summary>
+public sealed record DeploymentCompatibilityResponse(
+    bool Allowed,
+    DeploymentCompatibilityStatus Status,
+    string Code,
+    string Message,
+    DateTimeOffset? ObservedAt,
+    IReadOnlyList<ComponentVersionMismatchResponse> Mismatches);
+
+/// <summary>Represents one observed component version mismatch.</summary>
+public sealed record ComponentVersionMismatchResponse(
+    string Component,
+    string ExpectedVersion,
+    string ObservedVersion);

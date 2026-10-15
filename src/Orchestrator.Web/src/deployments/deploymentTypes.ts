@@ -36,6 +36,18 @@ export type ObservationState = {
 export type DeploymentListItem = {
   deployment: Deployment
   observation?: ObservationState
+  compatibility?: {
+    allowed: boolean
+    status: string
+    code: string
+    message: string
+    observedAt?: string
+    mismatches: {
+      component: string
+      expectedVersion: string
+      observedVersion: string
+    }[]
+  }
 }
 
 export type DeploymentListResponse = {

@@ -308,6 +308,14 @@ function DeploymentDetail({
         />
         <Metadata label="Current state" value={status} />
         <Metadata
+          label="Mutation compatibility"
+          value={
+            item.compatibility?.allowed
+              ? 'Compatible'
+              : item.compatibility?.message ?? 'Not evaluated'
+          }
+        />
+        <Metadata
           label="Latest collection"
           value={
             latest ? (
@@ -355,6 +363,25 @@ function DeploymentDetail({
           ))
         )}
       </div>
+
+      {item.compatibility?.mismatches.length ? (
+        <div
+          className="compatibility-mismatches"
+          role="alert"
+          aria-label="Component version mismatches"
+        >
+          <Text weight="semibold">
+            Mutation blocked by component versions
+          </Text>
+          {item.compatibility.mismatches.map((mismatch) => (
+            <div key={mismatch.component}>
+              <Text weight="semibold">{mismatch.component}</Text>
+              <Text>Expected {mismatch.expectedVersion}</Text>
+              <Text>Observed {mismatch.observedVersion}</Text>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div
         id={jobsId}

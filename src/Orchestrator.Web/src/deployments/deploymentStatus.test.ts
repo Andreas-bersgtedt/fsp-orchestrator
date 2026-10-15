@@ -27,6 +27,27 @@ describe('deployment status accessibility', () => {
     expect(announcement).toContain('Test deployment: Healthy.')
     expect(announcement).toContain('Collected')
   })
+
+  it('shows manifest mismatch as incompatible while observation stays readable', () => {
+    const deployment = item('Healthy', '2026-10-15T15:59:59Z')
+    deployment.compatibility = {
+      allowed: false,
+      status: 'Mismatched',
+      code: 'deployment.component_version_mismatch',
+      message: 'Mismatch.',
+      observedAt: '2026-10-15T15:59:59Z',
+      mismatches: [
+        {
+          component: 'agent-a',
+          expectedVersion: '3.1.0',
+          observedVersion: '3.0.1',
+        },
+      ],
+    }
+
+    expect(deploymentDisplayStatus(deployment, 120)).toBe('Incompatible')
+    expect(deployment.observation?.lastSuccessfulValues).toEqual([])
+  })
 })
 
 function item(status: string, completedAt: string): DeploymentListItem {

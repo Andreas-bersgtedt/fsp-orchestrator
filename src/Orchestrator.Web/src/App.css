@@ -192,6 +192,23 @@ main {
   align-items: center;
 }
 
+.compatibility-mismatches {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px;
+  padding: 12px;
+  border: 1px solid #c4314b;
+  border-radius: 6px;
+  background: #fff1f3;
+  color: #7f1734;
+}
+
+.compatibility-mismatches > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 1fr 1fr;
+  gap: 12px;
+}
+
 .prerequisite-actions,
 .status-counts,
 .result-title,

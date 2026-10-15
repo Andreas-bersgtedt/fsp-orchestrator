@@ -214,6 +214,17 @@ public sealed class FspDeploymentProbeTests
                 && value.Version == "3.1.0");
     }
 
+    [Fact]
+    public void EmbeddedReleaseManifestDefinesCompatibilityVersions()
+    {
+        var policy = new ReleaseManifestCompatibilityPolicy();
+
+        Assert.Equal("3.1.0", policy.Requirements.ReleaseVersion);
+        Assert.Equal("3.1.0", policy.Requirements.LiteVersion);
+        Assert.Equal("3.1.0", policy.Requirements.ManagerVersion);
+        Assert.True(policy.Requirements.ComponentsMoveTogether);
+    }
+
     private static FspDeploymentProbe Probe(
         Func<HttpRequestMessage, HttpResponseMessage> response,
         TestCredentialResolver? resolver = null) =>

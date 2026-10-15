@@ -14,6 +14,10 @@ export function deploymentDisplayStatus(
   staleAfterSeconds: number,
   nowMilliseconds = Date.now(),
 ): DisplayStatus {
+  if (item.compatibility?.status === 'Mismatched') {
+    return 'Incompatible'
+  }
+
   const latest = item.observation?.latestAttempt
   if (!latest) {
     return 'Not observed'
