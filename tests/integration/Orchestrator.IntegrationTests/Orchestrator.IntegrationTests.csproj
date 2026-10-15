@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Orchestrator.Api\Orchestrator.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Orchestrator.Infrastructure\Orchestrator.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

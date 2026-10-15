@@ -10,6 +10,8 @@ on:
       - "Directory.Build.props"
       - "Fsp.Orchestrator.slnx"
       - "global.json"
+      - "dotnet-tools.json"
+      - ".editorconfig"
       - ".github/workflows/application.yml"
   push:
     branches:
@@ -22,6 +24,8 @@ on:
       - "Directory.Build.props"
       - "Fsp.Orchestrator.slnx"
       - "global.json"
+      - "dotnet-tools.json"
+      - ".editorconfig"
       - ".github/workflows/application.yml"
 
 permissions:
@@ -48,7 +52,15 @@ jobs:
           cache-dependency-path: src/Orchestrator.Web/package-lock.json
 
       - name: Restore .NET dependencies
-        run: dotnet restore Fsp.Orchestrator.slnx
+        run: |
+          dotnet restore Fsp.Orchestrator.slnx
+          dotnet tool restore
+
+      - name: Verify EF Core migrations
+        run: >-
+          dotnet tool run dotnet-ef migrations has-pending-model-changes
+          --project src/Orchestrator.Infrastructure/Orchestrator.Infrastructure.csproj
+          --startup-project src/Orchestrator.Api/Orchestrator.Api.csproj
 
       - name: Verify .NET formatting
         run: dotnet format Fsp.Orchestrator.slnx --no-restore --verify-no-changes

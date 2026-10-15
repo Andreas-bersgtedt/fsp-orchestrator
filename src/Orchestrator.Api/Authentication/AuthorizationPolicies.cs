@@ -5,6 +5,7 @@ namespace Fsp.Orchestrator.Api.Authentication;
 public static class AuthorizationPolicies
 {
     public const string Access = "Orchestrator.Access";
+    public const string DatabaseDiagnostics = "Orchestrator.DatabaseDiagnostics";
 
     public static void Add(
         AuthorizationOptions options,
@@ -24,6 +25,16 @@ public static class AuthorizationPolicies
                     policy.RequireRole(role);
                 });
         }
+
+        options.AddPolicy(
+            DatabaseDiagnostics,
+            policy =>
+            {
+                AddAccessRequirements(policy, configuration);
+                policy.RequireRole(
+                    OrchestratorRoles.Reader,
+                    OrchestratorRoles.SecurityAdmin);
+            });
     }
 
     private static void AddAccessRequirements(

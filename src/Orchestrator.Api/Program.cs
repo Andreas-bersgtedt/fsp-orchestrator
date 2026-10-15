@@ -4,6 +4,7 @@ using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
+using Fsp.Orchestrator.Infrastructure.Persistence;
 
 var applicationArgs = await ProcessRestartBootstrap.PrepareAsync(args);
 if (applicationArgs is null)
@@ -27,6 +28,9 @@ builder.Services.AddSingleton(hostingRuntime);
 builder.Services.AddSingleton<StartupReadiness>();
 builder.Services.AddSingleton<IIdentityConfigurationStore, IdentityConfigurationStore>();
 builder.Services.AddSingleton<IApplicationRestartScheduler, ApplicationRestartScheduler>();
+builder.Services.AddOrchestratorPersistence(
+    Path.Combine(hostingRuntime.DataDirectory, "orchestrator.db"));
+builder.Services.AddHostedService<DatabaseMigrationHostedService>();
 builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
@@ -63,6 +67,7 @@ var api = app.MapGroup("/api")
 api.MapHealth();
 api.MapAuthentication();
 api.MapEntraRegistrations();
+api.MapDatabase();
 app.MapBootstrap();
 api.MapMethods(
         "/{**path}",

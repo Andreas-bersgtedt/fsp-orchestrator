@@ -26,6 +26,10 @@ const BootstrapSetup = lazy(async () => {
   const module = await import('./identity/BootstrapSetup.tsx')
   return { default: module.BootstrapSetup }
 })
+const DatabaseStatus = lazy(async () => {
+  const module = await import('./system/DatabaseStatus.tsx')
+  return { default: module.DatabaseStatus }
+})
 
 type HealthResponse = {
   status: string
@@ -149,6 +153,20 @@ export default function App({
                 apiScope={authentication.apiScope}
                 identityConfiguration={authentication.identityConfiguration}
                 session={authentication.session}
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
+          (authentication.session.permissions.Reader ||
+            authentication.session.permissions.SecurityAdmin) ? (
+            <Suspense fallback={<Spinner label="Loading database diagnostics" />}>
+              <DatabaseStatus
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+                canManage={Boolean(
+                  authentication.session.permissions.SecurityAdmin,
+                )}
               />
             </Suspense>
           ) : null}
