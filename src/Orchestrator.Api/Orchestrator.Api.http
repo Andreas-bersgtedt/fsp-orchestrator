@@ -164,3 +164,13 @@ Content-Type: application/json
 GET {{baseUrl}}/api/deployments/{{deploymentId}}
 Accept: application/json
 Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Get latest and last successful observations
+GET {{baseUrl}}/api/deployments/{{deploymentId}}/observations/current
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Refresh deployment observations
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/observations
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}

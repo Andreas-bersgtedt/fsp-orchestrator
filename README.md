@@ -184,6 +184,12 @@ probe checks HTTPS health, readiness, the FSP 3.1.0 OpenAPI identity, topology,
 and Enterprise credentials before one SQLite transaction creates inventory and
 component-version observations.
 
+Registered deployments are polled by the
+[observation scheduler](./docs/architecture/deployment-observations.md).
+Latest failures are reported separately from the timestamp and values of the
+last successful poll, so disconnected endpoints are never shown as currently
+healthy.
+
 Build, signing, certificate lifecycle, repair, upgrade, and removal behavior
 for the WiX package are documented in the
 [Windows installer guide](./docs/setup/windows-installer.md).

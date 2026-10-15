@@ -8,6 +8,18 @@ internal sealed class InventoryStore(
     IPersistenceValueGuard valueGuard)
     : IInventoryStore
 {
+    public async Task<IReadOnlyList<DeploymentInventoryItem>> ListAsync(
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(
+            cancellationToken);
+        var entities = await context.Deployments
+            .AsNoTracking()
+            .OrderBy(deployment => deployment.Name)
+            .ToArrayAsync(cancellationToken);
+        return entities.Select(Map).ToArray();
+    }
+
     public async Task<DeploymentInventoryItem?> GetAsync(
         Guid deploymentId,
         CancellationToken cancellationToken)

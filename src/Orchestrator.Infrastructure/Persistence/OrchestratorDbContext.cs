@@ -10,6 +10,9 @@ public sealed class OrchestratorDbContext(
 
     internal DbSet<ObservationEntity> Observations => Set<ObservationEntity>();
 
+    internal DbSet<ObservationAttemptEntity> ObservationAttempts =>
+        Set<ObservationAttemptEntity>();
+
     internal DbSet<JobEntity> Jobs => Set<JobEntity>();
 
     internal DbSet<JobStepEntity> JobSteps => Set<JobStepEntity>();
@@ -49,6 +52,30 @@ public sealed class OrchestratorDbContext(
                 entity.HasIndex(item => new { item.DeploymentId, item.ObservedAt });
                 entity.HasOne(item => item.Deployment)
                     .WithMany(item => item.Observations)
+                    .HasForeignKey(item => item.DeploymentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(item => item.Attempt)
+                    .WithMany(item => item.Values)
+                    .HasForeignKey(item => item.AttemptId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        modelBuilder.Entity<ObservationAttemptEntity>(
+            entity =>
+            {
+                entity.ToTable("ObservationAttempts");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(40);
+                entity.Property(item => item.Code).HasMaxLength(100);
+                entity.HasIndex(
+                    item => new
+                    {
+                        item.DeploymentId,
+                        item.CompletedAtUnixMilliseconds,
+                    });
+                entity.HasOne(item => item.Deployment)
+                    .WithMany()
                     .HasForeignKey(item => item.DeploymentId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

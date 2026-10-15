@@ -41,7 +41,32 @@ internal sealed class ObservationEntity
 
     public DateTimeOffset ObservedAt { get; set; }
 
+    public Guid? AttemptId { get; set; }
+
     public DeploymentEntity? Deployment { get; set; }
+
+    public ObservationAttemptEntity? Attempt { get; set; }
+}
+
+internal sealed class ObservationAttemptEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid DeploymentId { get; set; }
+
+    public Application.Deployments.DeploymentObservationStatus Status { get; set; }
+
+    public required string Code { get; set; }
+
+    public DateTimeOffset StartedAt { get; set; }
+
+    public DateTimeOffset CompletedAt { get; set; }
+
+    public long CompletedAtUnixMilliseconds { get; set; }
+
+    public DeploymentEntity? Deployment { get; set; }
+
+    public List<ObservationEntity> Values { get; } = [];
 }
 
 internal sealed class JobEntity

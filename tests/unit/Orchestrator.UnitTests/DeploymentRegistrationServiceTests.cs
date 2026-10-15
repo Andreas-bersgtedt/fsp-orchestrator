@@ -160,6 +160,10 @@ public sealed class DeploymentRegistrationServiceTests
 
         public RegisterDeployment? Registered { get; private set; }
 
+        public Task<IReadOnlyList<DeploymentInventoryItem>> ListAsync(
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<DeploymentInventoryItem>>([]);
+
         public Task<DeploymentInventoryItem?> GetAsync(
             Guid deploymentId,
             CancellationToken cancellationToken) =>
@@ -198,5 +202,6 @@ public sealed class DeploymentRegistrationServiceTests
             RecordObservation request,
             CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
     }
 }

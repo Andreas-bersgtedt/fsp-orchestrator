@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
@@ -353,6 +354,42 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task OperatorCanRefreshAndReaderCanGetObservationState()
+    {
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.Reader},{OrchestratorRoles.Operator}");
+        var registrationResponse = await client.PostAsJsonAsync(
+            "/api/deployments",
+            new RegisterDeploymentRequest
+            {
+                Name = "Observed Lite",
+                ManagerEndpoint = $"https://lite-{Guid.NewGuid():N}.example.test",
+            });
+        var registration = await registrationResponse.Content
+            .ReadFromJsonAsync<DeploymentRegistrationResponse>();
+
+        var refresh = await client.PostAsync(
+            $"/api/deployments/{registration!.Deployment.Id}/observations",
+            content: null);
+        var current = await client.GetAsync(
+            $"/api/deployments/{registration.Deployment.Id}/observations/current");
+        using var state = JsonDocument.Parse(
+            await current.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, current.StatusCode);
+        Assert.Equal(
+            "Healthy",
+            state.RootElement
+                .GetProperty("latestAttempt")
+                .GetProperty("status")
+                .GetString());
+        Assert.NotEqual(
+            JsonValueKind.Null,
+            state.RootElement.GetProperty("lastSuccessfulAt").ValueKind);
+    }
+
+    [Fact]
     public async Task RegistrationValidationRequiresSecurityAdmin()
     {
         using var reader = CreateAuthenticatedClient(OrchestratorRoles.Reader);
@@ -524,6 +561,10 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                     services.AddSingleton<
                         IDeploymentRegistrationService,
                         TestDeploymentRegistrationService>();
+                    services.RemoveAll<IDeploymentObservationService>();
+                    services.AddSingleton<
+                        IDeploymentObservationService,
+                        TestDeploymentObservationService>();
                     services.AddAuthentication(
                             options =>
                             {
@@ -568,6 +609,39 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                     now),
                 cancellationToken);
             return new DeploymentRegistrationResult(deployment, components);
+        }
+    }
+
+    private sealed class TestDeploymentObservationService(
+        IInventoryStore inventoryStore,
+        IDeploymentObservationStore observationStore,
+        TimeProvider timeProvider)
+        : IDeploymentObservationService
+    {
+        public Task PollAllAsync(CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public async Task<DeploymentObservationState> PollAsync(
+            Guid deploymentId,
+            CancellationToken cancellationToken)
+        {
+            _ = await inventoryStore.GetAsync(deploymentId, cancellationToken)
+                ?? throw new KeyNotFoundException();
+            var now = timeProvider.GetUtcNow();
+            await observationStore.RecordAttemptAsync(
+                new DeploymentObservationAttempt(
+                    Guid.NewGuid(),
+                    deploymentId,
+                    DeploymentObservationStatus.Healthy,
+                    "observation.healthy",
+                    now,
+                    now,
+                    [new ObservedComponent("health", "ok", "current")]),
+                cancellationToken);
+            return await observationStore.GetStateAsync(
+                deploymentId,
+                cancellationToken)
+                ?? throw new InvalidOperationException();
         }
     }
 }

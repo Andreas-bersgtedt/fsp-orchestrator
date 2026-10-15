@@ -11,155 +11,156 @@ namespace Fsp.Orchestrator.Infrastructure.Deployments;
 public sealed class FspDeploymentProbe(
     HttpClient client,
     IFspCredentialResolver credentialResolver)
-    : IFspDeploymentProbe
+    : IFspDeploymentProbe, IFspObservationProbe
 {
     private const string SupportedVersion = "3.1.0";
     private const int MaximumResponseBytes = 1_048_576;
 
-    public async Task<DeploymentProbeResult> ProbeAsync(
+    public Task<DeploymentProbeResult> ProbeAsync(
+        DeploymentProbeRequest request,
+        CancellationToken cancellationToken) =>
+        MapErrorsAsync(
+            () => ProbeCoreAsync(request, cancellationToken),
+            cancellationToken);
+
+    public Task<DeploymentObservationSnapshot> ObserveAsync(
+        DeploymentInventoryItem deployment,
+        CancellationToken cancellationToken) =>
+        MapErrorsAsync(
+            () => ObserveCoreAsync(deployment, cancellationToken),
+            cancellationToken);
+
+    private async Task<DeploymentProbeResult> ProbeCoreAsync(
         DeploymentProbeRequest request,
         CancellationToken cancellationToken)
     {
-        try
+        await RequireStatusAsync(
+            Endpoint(request.ManagerEndpoint, "healthz"),
+            "ok",
+            cancellationToken);
+        await RequireStatusAsync(
+            Endpoint(request.ManagerEndpoint, "readyz"),
+            "ready",
+            cancellationToken);
+        using var openApi = await GetJsonAsync(
+            Endpoint(request.ManagerEndpoint, "openapi.json"),
+            authorization: null,
+            cancellationToken);
+        var topology = ValidateContract(openApi.RootElement);
+        var components = new List<ObservedComponent>
         {
-            await RequireStatusAsync(
-                client,
-                Endpoint(request.ManagerEndpoint, "healthz"),
-                "ok",
-                cancellationToken);
-            await RequireStatusAsync(
-                client,
-                Endpoint(request.ManagerEndpoint, "readyz"),
-                "ready",
-                cancellationToken);
-            using var openApi = await GetJsonAsync(
-                client,
-                Endpoint(request.ManagerEndpoint, "openapi.json"),
-                authorization: null,
-                cancellationToken);
-            var topology = ValidateContract(openApi.RootElement);
-            var components = new List<ObservedComponent>
-            {
-                new(
-                    topology == FspTopology.Lite ? "lite" : "manager",
-                    SupportedVersion,
-                    "healthy"),
-            };
+            new(
+                topology == FspTopology.Lite ? "lite" : "manager",
+                SupportedVersion,
+                "healthy"),
+        };
 
-            if (topology == FspTopology.Enterprise)
+        if (topology == FspTopology.Enterprise)
+        {
+            if (request.CredentialKind == FspCredentialKind.None)
             {
-                if (request.CredentialKind == FspCredentialKind.None)
-                {
-                    throw new DeploymentRegistrationException(
-                        DeploymentRegistrationFailure.IdentityRejected,
-                        "deployment.credential_required",
-                        "Enterprise Manager registration requires a credential reference.");
-                }
-
-                var secret = await credentialResolver.ResolveAsync(
-                    request.CredentialKind,
-                    request.CredentialReference,
-                    cancellationToken);
-                var authorization = Authorization(
-                    request.CredentialKind,
-                    secret);
-                using var agents = await GetJsonAsync(
-                    client,
-                    Endpoint(request.ManagerEndpoint, "agents"),
-                    authorization,
-                    cancellationToken);
-                AddAgentVersions(agents.RootElement, components);
+                throw Failure(
+                    DeploymentRegistrationFailure.IdentityRejected,
+                    "deployment.credential_required",
+                    "Enterprise Manager registration requires a credential reference.");
             }
 
-            return new DeploymentProbeResult(topology, components);
+            var secret = await credentialResolver.ResolveAsync(
+                request.CredentialKind,
+                request.CredentialReference,
+                cancellationToken);
+            var authorization = Authorization(
+                request.CredentialKind,
+                secret);
+            using var agents = await GetJsonAsync(
+                Endpoint(request.ManagerEndpoint, "agents"),
+                authorization,
+                cancellationToken);
+            AddAgentVersions(agents.RootElement, components);
         }
-        catch (DeploymentRegistrationException)
-        {
-            throw;
-        }
-        catch (AuthenticationException)
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.TlsValidationFailed,
-                "deployment.tls_validation_failed",
-                "TLS validation failed for the FSP endpoint.");
-        }
-        catch (HttpRequestException exception)
-            when (exception.InnerException is AuthenticationException)
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.TlsValidationFailed,
-                "deployment.tls_validation_failed",
-                "TLS validation failed for the FSP endpoint.");
-        }
-        catch (HttpRequestException)
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.Unreachable,
-                "deployment.endpoint_unreachable",
-                "The FSP endpoint could not be reached.");
-        }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.Unreachable,
-                "deployment.endpoint_timeout",
-                "The FSP endpoint did not respond before the timeout.");
-        }
-        catch (JsonException)
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.ContractMismatch,
-                "deployment.contract_invalid",
-                "The FSP endpoint returned an invalid contract response.");
-        }
+
+        return new DeploymentProbeResult(topology, components);
     }
 
-    private static FspTopology ValidateContract(JsonElement root)
+    private async Task<DeploymentObservationSnapshot> ObserveCoreAsync(
+        DeploymentInventoryItem deployment,
+        CancellationToken cancellationToken)
     {
-        var info = root.TryGetProperty("info", out var infoElement)
-            ? infoElement
-            : throw ContractMismatch();
-        var title = GetRequiredString(info, "title");
-        var version = info.TryGetProperty("x-fsp-release", out var release)
-            ? release.GetString()
-            : GetRequiredString(info, "version");
-        if (!string.Equals(version, SupportedVersion, StringComparison.Ordinal))
-        {
-            throw Failure(
-                DeploymentRegistrationFailure.IncompatibleVersion,
-                "deployment.version_incompatible",
-                $"FSP version {SupportedVersion} is required.");
-        }
-
-        var topology = title switch
-        {
-            "Fabric Shortcut Proxy (POC)" => FspTopology.Lite,
-            "Fabric Shortcut Proxy: Manager" => FspTopology.Enterprise,
-            _ => throw ContractMismatch(),
-        };
-        var paths = root.TryGetProperty("paths", out var pathsElement)
-            ? pathsElement
-            : throw ContractMismatch();
-        var requiredPaths = topology == FspTopology.Lite
-            ? new[] { "/", "/healthz", "/readyz" }
-            : new[] { "/agents", "/healthz", "/readyz" };
-        if (requiredPaths.Any(path => !paths.TryGetProperty(path, out _)))
+        await RequireStatusAsync(
+            Endpoint(deployment.ManagerEndpoint, "healthz"),
+            "ok",
+            cancellationToken);
+        await RequireStatusAsync(
+            Endpoint(deployment.ManagerEndpoint, "readyz"),
+            "ready",
+            cancellationToken);
+        using var openApi = await GetJsonAsync(
+            Endpoint(deployment.ManagerEndpoint, "openapi.json"),
+            authorization: null,
+            cancellationToken);
+        var topology = ValidateContract(openApi.RootElement);
+        if (!string.Equals(
+                topology.ToString(),
+                deployment.Topology,
+                StringComparison.Ordinal))
         {
             throw ContractMismatch();
         }
 
-        return topology;
+        var values = new List<ObservedComponent>
+        {
+            new("health", "ok", "current"),
+            new("readiness", "ready", "current"),
+            new(
+                topology == FspTopology.Lite ? "lite" : "manager",
+                SupportedVersion,
+                "current"),
+        };
+        if (topology == FspTopology.Enterprise)
+        {
+            if (!Enum.TryParse<FspCredentialKind>(
+                    deployment.CredentialKind,
+                    ignoreCase: false,
+                    out var kind)
+                || kind == FspCredentialKind.None)
+            {
+                throw Failure(
+                    DeploymentRegistrationFailure.IdentityRejected,
+                    "deployment.credential_required",
+                    "Enterprise Manager observation requires a credential reference.");
+            }
+
+            var secret = await credentialResolver.ResolveAsync(
+                kind,
+                deployment.CredentialReference,
+                cancellationToken);
+            var authorization = Authorization(kind, secret);
+            using var agents = await GetJsonAsync(
+                Endpoint(deployment.ManagerEndpoint, "agents"),
+                authorization,
+                cancellationToken);
+            AddFleetObservation(agents.RootElement, values);
+            AddAgentVersions(agents.RootElement, values);
+            using var queue = await GetJsonAsync(
+                Endpoint(deployment.ManagerEndpoint, "control/work-queue"),
+                authorization,
+                cancellationToken);
+            values.Add(
+                new ObservedComponent(
+                    "queue",
+                    TopLevelArrayCounts(queue.RootElement),
+                    "current"));
+        }
+
+        return new DeploymentObservationSnapshot(values);
     }
 
-    private static async Task RequireStatusAsync(
-        HttpClient client,
+    private async Task RequireStatusAsync(
         Uri endpoint,
         string expectedStatus,
         CancellationToken cancellationToken)
     {
         using var document = await GetJsonAsync(
-            client,
             endpoint,
             authorization: null,
             cancellationToken);
@@ -176,8 +177,7 @@ public sealed class FspDeploymentProbe(
         }
     }
 
-    private static async Task<JsonDocument> GetJsonAsync(
-        HttpClient client,
+    private async Task<JsonDocument> GetJsonAsync(
         Uri endpoint,
         AuthenticationHeaderValue? authorization,
         CancellationToken cancellationToken)
@@ -215,6 +215,43 @@ public sealed class FspDeploymentProbe(
         return await JsonDocument.ParseAsync(
             stream,
             cancellationToken: cancellationToken);
+    }
+
+    private static FspTopology ValidateContract(JsonElement root)
+    {
+        var info = root.TryGetProperty("info", out var infoElement)
+            ? infoElement
+            : throw ContractMismatch();
+        var title = GetRequiredString(info, "title");
+        var version = info.TryGetProperty("x-fsp-release", out var release)
+            ? release.GetString()
+            : GetRequiredString(info, "version");
+        if (!string.Equals(version, SupportedVersion, StringComparison.Ordinal))
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.IncompatibleVersion,
+                "deployment.version_incompatible",
+                $"FSP version {SupportedVersion} is required.");
+        }
+
+        var topology = title switch
+        {
+            "Fabric Shortcut Proxy (POC)" => FspTopology.Lite,
+            "Fabric Shortcut Proxy: Manager" => FspTopology.Enterprise,
+            _ => throw ContractMismatch(),
+        };
+        var paths = root.TryGetProperty("paths", out var pathsElement)
+            ? pathsElement
+            : throw ContractMismatch();
+        var requiredPaths = topology == FspTopology.Lite
+            ? new[] { "/", "/healthz", "/readyz" }
+            : new[] { "/agents", "/healthz", "/readyz" };
+        if (requiredPaths.Any(path => !paths.TryGetProperty(path, out _)))
+        {
+            throw ContractMismatch();
+        }
+
+        return topology;
     }
 
     private static AuthenticationHeaderValue Authorization(
@@ -278,6 +315,43 @@ public sealed class FspDeploymentProbe(
         }
     }
 
+    private static void AddFleetObservation(
+        JsonElement root,
+        List<ObservedComponent> values)
+    {
+        if (!root.TryGetProperty("agents", out var agents)
+            || agents.ValueKind != JsonValueKind.Array
+            || !root.TryGetProperty("dead", out var dead)
+            || dead.ValueKind != JsonValueKind.Array)
+        {
+            throw ContractMismatch();
+        }
+
+        values.Add(
+            new ObservedComponent(
+                "fleet",
+                $"active={agents.GetArrayLength()};dead={dead.GetArrayLength()}",
+                "current"));
+    }
+
+    private static string TopLevelArrayCounts(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw ContractMismatch();
+        }
+
+        var counts = root.EnumerateObject()
+            .Where(property => property.Value.ValueKind == JsonValueKind.Array)
+            .OrderBy(property => property.Name, StringComparer.Ordinal)
+            .Take(10)
+            .Select(
+                property =>
+                    $"{property.Name}={property.Value.GetArrayLength()}")
+            .ToArray();
+        return counts.Length == 0 ? "available" : string.Join(';', counts);
+    }
+
     private static string? FirstString(
         JsonElement element,
         params string[] names)
@@ -307,6 +381,56 @@ public sealed class FspDeploymentProbe(
             ? managerEndpoint
             : new Uri($"{managerEndpoint.AbsoluteUri}/");
         return new Uri(baseUri, path);
+    }
+
+    private static async Task<T> MapErrorsAsync<T>(
+        Func<Task<T>> action,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (DeploymentRegistrationException)
+        {
+            throw;
+        }
+        catch (AuthenticationException)
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.TlsValidationFailed,
+                "deployment.tls_validation_failed",
+                "TLS validation failed for the FSP endpoint.");
+        }
+        catch (HttpRequestException exception)
+            when (exception.InnerException is AuthenticationException)
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.TlsValidationFailed,
+                "deployment.tls_validation_failed",
+                "TLS validation failed for the FSP endpoint.");
+        }
+        catch (HttpRequestException)
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.Unreachable,
+                "deployment.endpoint_unreachable",
+                "The FSP endpoint could not be reached.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.Unreachable,
+                "deployment.endpoint_timeout",
+                "The FSP endpoint did not respond before the timeout.");
+        }
+        catch (JsonException)
+        {
+            throw Failure(
+                DeploymentRegistrationFailure.ContractMismatch,
+                "deployment.contract_invalid",
+                "The FSP endpoint returned an invalid contract response.");
+        }
     }
 
     private static DeploymentRegistrationException ContractMismatch() =>
