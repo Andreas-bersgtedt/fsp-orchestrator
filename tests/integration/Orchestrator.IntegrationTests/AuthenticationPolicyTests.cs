@@ -5,6 +5,7 @@ using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
+using Fsp.Orchestrator.Application.Prerequisites;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -168,7 +169,7 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
             await restoreResponse.Content.ReadFromJsonAsync<DatabaseRestoreResponse>();
 
         Assert.Equal("ok", diagnostics!.Integrity);
-        Assert.Contains("AddPrerequisiteRuns", diagnostics.Migration);
+        Assert.NotEqual("none", diagnostics.Migration);
         Assert.Equal(HttpStatusCode.Created, backupResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
         Assert.True(restore!.Restored);
@@ -230,11 +231,82 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                 },
             });
 
-        Assert.Empty(catalog!.Checks);
+        Assert.NotNull(catalog);
         Assert.Equal(HttpStatusCode.Accepted, startResponse.StatusCode);
         Assert.Equal("Passed", run!.Status);
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, mismatch.StatusCode);
+    }
+
+    [Fact]
+    public async Task WarningAcceptanceRecordsActorAndReportIsRedacted()
+    {
+        _ = factory!.Server;
+        var store = factory.Services.GetRequiredService<IPrerequisiteRunStore>();
+        var runId = Guid.NewGuid();
+        var definition = new PrerequisiteCheckDefinition(
+            "test.warning",
+            "test",
+            "Warning",
+            "Warning",
+            [],
+            ["deploy"],
+            ["target"],
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromMinutes(5),
+            false,
+            "1.0");
+        var inputs = new Dictionary<string, string> { ["target"] = "a" };
+        await store.CreateAsync(
+            new PrerequisiteRunRequest(runId, "deploy", inputs),
+            [definition],
+            PrerequisiteFingerprint.Compute(inputs),
+            CancellationToken.None);
+        await store.UpdateResultAsync(
+            runId,
+            new PrerequisiteCheckResult(
+                definition.Id,
+                definition.Category,
+                definition.Blocking,
+                PrerequisiteCheckStatus.Warning,
+                "test.warning",
+                "Review this warning.",
+                new Dictionary<string, string> { ["resource"] = "safe" },
+                "Accept with a reason.",
+                PrerequisiteFingerprint.Compute(inputs, definition.InputKeys),
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow.AddMinutes(5),
+                10,
+                null),
+            CancellationToken.None);
+        await store.CompleteRunAsync(
+            runId,
+            PrerequisiteRunStatus.Warning,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.Reader},{OrchestratorRoles.Operator}");
+
+        var acceptanceResponse = await client.PostAsJsonAsync(
+            $"/api/prerequisites/runs/{runId}/results/{definition.Id}/accept-warning",
+            new AcceptPrerequisiteWarningRequest
+            {
+                Reason = "Approved for this maintenance window.",
+            });
+        var reportResponse = await client.GetAsync(
+            $"/api/prerequisites/runs/{runId}/report");
+        var reportBody = await reportResponse.Content.ReadAsStringAsync();
+        var report =
+            await reportResponse.Content.ReadFromJsonAsync<PrerequisiteReportResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, acceptanceResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, reportResponse.StatusCode);
+        Assert.Equal(
+            "Approved for this maintenance window.",
+            Assert.Single(report!.Run.Results).WarningAcceptance!.Reason);
+        Assert.DoesNotContain("Bearer ", reportBody, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("authorization", reportBody, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

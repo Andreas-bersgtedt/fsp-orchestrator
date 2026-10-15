@@ -91,6 +91,57 @@ main {
   color: #45566f;
 }
 
+.prerequisites-page {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 64px;
+}
+
+.prerequisite-actions,
+.status-counts,
+.result-title,
+.warning-acceptance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.prerequisite-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.prerequisite-results {
+  display: grid;
+  gap: 14px;
+}
+
+.prerequisite-results details {
+  padding: 0 12px;
+}
+
+.prerequisite-results dl {
+  display: grid;
+  gap: 6px;
+}
+
+.prerequisite-results dl > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) 1fr;
+  gap: 12px;
+}
+
+.prerequisite-results dt {
+  font-weight: 600;
+}
+
+.prerequisite-results dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .registration-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -199,6 +250,10 @@ footer {
   }
 
   .registration-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .prerequisite-inputs {
     grid-template-columns: 1fr;
   }
 }

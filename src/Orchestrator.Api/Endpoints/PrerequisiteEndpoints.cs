@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Application.Prerequisites;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Fsp.Orchestrator.Api.Endpoints;
 
@@ -123,7 +125,97 @@ public static class PrerequisiteEndpoints
             .Produces<PrerequisiteGateResponse>(StatusCodes.Status200OK)
             .Produces<PrerequisiteGateResponse>(StatusCodes.Status409Conflict);
 
+        endpoints.MapPost(
+                "/prerequisites/runs/{runId:guid}/results/{checkId}/accept-warning",
+                AcceptWarningAsync)
+            .RequireAuthorization(OrchestratorRoles.Operator)
+            .WithName("AcceptPrerequisiteWarning")
+            .WithSummary("Accept a prerequisite warning")
+            .WithDescription(
+                "Records the actor and written reason. Failed or non-warning results "
+                + "cannot be accepted.")
+            .Produces<WarningAcceptanceResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict);
+
+        endpoints.MapGet(
+                "/prerequisites/runs/{runId:guid}/report",
+                async Task<Results<Ok<PrerequisiteReportResponse>, NotFound>> (
+                    Guid runId,
+                    IPrerequisiteRunStore store,
+                    CancellationToken cancellationToken) =>
+                {
+                    var run = await store.GetAsync(runId, cancellationToken);
+                    return run is null
+                        ? TypedResults.NotFound()
+                        : TypedResults.Ok(
+                            new PrerequisiteReportResponse(
+                                DateTimeOffset.UtcNow,
+                                Map(run)));
+                })
+            .RequireAuthorization(OrchestratorRoles.Reader)
+            .WithName("ExportPrerequisiteReport")
+            .WithSummary("Export a redacted prerequisite report")
+            .WithDescription(
+                "Returns the persisted run using only sanitized evidence.")
+            .Produces<PrerequisiteReportResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
         return endpoints;
+    }
+
+    private static async Task<Results<
+        Ok<WarningAcceptanceResponse>,
+        BadRequest<ProblemDetails>,
+        NotFound<ProblemDetails>,
+        Conflict<ProblemDetails>>> AcceptWarningAsync(
+        Guid runId,
+        string checkId,
+        AcceptPrerequisiteWarningRequest request,
+        ClaimsPrincipal user,
+        IPrerequisiteRunStore store,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var acceptance = await store.AcceptWarningAsync(
+                runId,
+                checkId,
+                user.FindFirstValue("oid") ?? string.Empty,
+                request.Reason,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
+            return TypedResults.Ok(
+                new WarningAcceptanceResponse(
+                    acceptance.ActorObjectId,
+                    acceptance.Reason,
+                    acceptance.AcceptedAt));
+        }
+        catch (ArgumentException)
+        {
+            return TypedResults.BadRequest(
+                Problem(
+                    StatusCodes.Status400BadRequest,
+                    "Warning reason required",
+                    "Provide a written reason for accepting this warning."));
+        }
+        catch (KeyNotFoundException)
+        {
+            return TypedResults.NotFound(
+                Problem(
+                    StatusCodes.Status404NotFound,
+                    "Prerequisite result not found",
+                    "The requested run or check result does not exist."));
+        }
+        catch (InvalidOperationException)
+        {
+            return TypedResults.Conflict(
+                Problem(
+                    StatusCodes.Status409Conflict,
+                    "Warning cannot be accepted",
+                    "Only warning results can be accepted."));
+        }
     }
 
     private static PrerequisiteCheckDefinitionResponse Map(
@@ -165,8 +257,25 @@ public static class PrerequisiteEndpoints
                         result.StartedAt,
                         result.CompletedAt,
                         result.ExpiresAt,
-                        result.DurationMilliseconds))
+                        result.DurationMilliseconds,
+                        result.WarningAcceptance is null
+                            ? null
+                            : new WarningAcceptanceResponse(
+                                result.WarningAcceptance.ActorObjectId,
+                                result.WarningAcceptance.Reason,
+                                result.WarningAcceptance.AcceptedAt)))
                 .ToArray());
+
+    private static ProblemDetails Problem(
+        int status,
+        string title,
+        string detail) =>
+        new()
+        {
+            Status = status,
+            Title = title,
+            Detail = detail,
+        };
 }
 
 /// <summary>All prerequisite checks available in the current build.</summary>
@@ -225,7 +334,8 @@ public sealed record PrerequisiteCheckResultResponse(
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
     DateTimeOffset? ExpiresAt,
-    long DurationMilliseconds);
+    long DurationMilliseconds,
+    WarningAcceptanceResponse? WarningAcceptance);
 
 /// <summary>Current operation inputs used to validate a completed run.</summary>
 public sealed record ValidatePrerequisiteRunRequest
@@ -241,3 +351,20 @@ public sealed record PrerequisiteGateResponse(
     string Code,
     string Message,
     IReadOnlyList<string> BlockingCheckIds);
+
+/// <summary>Written reason for accepting a non-blocking prerequisite warning.</summary>
+public sealed record AcceptPrerequisiteWarningRequest
+{
+    public required string Reason { get; init; }
+}
+
+/// <summary>Recorded warning acceptance actor, reason, and time.</summary>
+public sealed record WarningAcceptanceResponse(
+    string ActorObjectId,
+    string Reason,
+    DateTimeOffset AcceptedAt);
+
+/// <summary>Exported persisted run containing sanitized evidence only.</summary>
+public sealed record PrerequisiteReportResponse(
+    DateTimeOffset ExportedAt,
+    PrerequisiteRunResponse Run);

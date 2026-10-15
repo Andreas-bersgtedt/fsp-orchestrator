@@ -30,6 +30,10 @@ const DatabaseStatus = lazy(async () => {
   const module = await import('./system/DatabaseStatus.tsx')
   return { default: module.DatabaseStatus }
 })
+const PrerequisitesPage = lazy(async () => {
+  const module = await import('./prerequisites/PrerequisitesPage.tsx')
+  return { default: module.PrerequisitesPage }
+})
 
 type HealthResponse = {
   status: string
@@ -159,6 +163,18 @@ export default function App({
 
           {authentication.kind === 'signed-in' &&
           (authentication.session.permissions.Reader ||
+            authentication.session.permissions.Operator) ? (
+            <Suspense fallback={<Spinner label="Loading prerequisites" />}>
+              <PrerequisitesPage
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+                canRun={Boolean(authentication.session.permissions.Operator)}
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
+          (authentication.session.permissions.Reader ||
             authentication.session.permissions.SecurityAdmin) ? (
             <Suspense fallback={<Spinner label="Loading database diagnostics" />}>
               <DatabaseStatus
@@ -192,7 +208,15 @@ export default function App({
                       description={<Text>{workflow.description}</Text>}
                     />
                     <CardFooter>
-                      <Button appearance="primary" disabled={!allowed}>
+                      <Button
+                        appearance="primary"
+                        disabled={!allowed || workflow.title !== 'Run prerequisites'}
+                        onClick={() =>
+                          document
+                            .getElementById('prerequisites')
+                            ?.scrollIntoView({ behavior: 'smooth' })
+                        }
+                      >
                         {workflow.action}
                       </Button>
                       <Text size={200}>

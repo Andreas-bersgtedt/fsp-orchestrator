@@ -36,6 +36,14 @@ public interface IPrerequisiteRunStore
     Task<PrerequisiteRun?> GetAsync(
         Guid runId,
         CancellationToken cancellationToken);
+
+    Task<PrerequisiteWarningAcceptance> AcceptWarningAsync(
+        Guid runId,
+        string checkId,
+        string actorObjectId,
+        string reason,
+        DateTimeOffset acceptedAt,
+        CancellationToken cancellationToken);
 }
 
 public interface IPrerequisiteEngine

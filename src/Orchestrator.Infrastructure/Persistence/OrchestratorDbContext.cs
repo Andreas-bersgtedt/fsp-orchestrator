@@ -119,6 +119,8 @@ public sealed class OrchestratorDbContext(
                 entity.Property(item => item.EvidenceJson).HasMaxLength(32_768);
                 entity.Property(item => item.Remediation).HasMaxLength(4_096);
                 entity.Property(item => item.InputFingerprint).HasMaxLength(64);
+                entity.Property(item => item.WarningAcceptedByObjectId).HasMaxLength(100);
+                entity.Property(item => item.WarningAcceptanceReason).HasMaxLength(1_000);
                 entity.HasOne(item => item.Run)
                     .WithMany(item => item.Results)
                     .HasForeignKey(item => item.RunId)

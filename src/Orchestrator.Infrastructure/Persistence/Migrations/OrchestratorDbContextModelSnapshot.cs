@@ -302,6 +302,17 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WarningAcceptanceReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("WarningAcceptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WarningAcceptedByObjectId")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("RunId", "CheckId");
 
                     b.ToTable("PrerequisiteResults", (string)null);
