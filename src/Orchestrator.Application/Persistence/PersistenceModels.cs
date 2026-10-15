@@ -55,6 +55,7 @@ public sealed record DatabaseDiagnostics(
     string DatabaseFileName,
     string Integrity,
     string Migration,
+    int PendingMigrationCount,
     long DeploymentCount,
     long JobCount,
     long AuditEventCount,

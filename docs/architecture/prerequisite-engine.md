@@ -45,3 +45,25 @@ gate rejects:
 
 Warning results do not bypass authorization and are handled by the warning
 acceptance workflow in #20.
+
+## Built-in local and identity checks
+
+The first production catalog contains:
+
+- Windows host and Windows Service hosting;
+- the fixed loopback HTTPS listener;
+- localhost certificate subject, expiry, and remaining lifetime;
+- SQLite integrity, pending migrations, and data-volume free space;
+- measured clock skew from the HTTPS `Date` header returned by the Microsoft
+  identity platform;
+- configured Entra tenant, distinct SPA/API client IDs, redirect URI, delegated
+  scope, authorized SPA client, and current user role assignment.
+
+The API adds the authenticated tenant, client ID, scopes, and roles to
+server-owned run inputs. Client-provided values cannot override them. These
+values participate in relevant-input fingerprints so an apply gate rejects a
+run if the authenticated identity context changes.
+
+Certificate evidence includes only the subject, expiry, and remaining days.
+No certificate private-key data, access token, or credential value is collected
+or persisted.
