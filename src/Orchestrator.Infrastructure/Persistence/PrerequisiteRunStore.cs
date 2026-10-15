@@ -149,6 +149,45 @@ internal sealed class PrerequisiteRunStore(
                     .ToArray());
     }
 
+    public async Task<PrerequisiteWarningAcceptance> AcceptWarningAsync(
+        Guid runId,
+        string checkId,
+        string actorObjectId,
+        string reason,
+        DateTimeOffset acceptedAt,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException(
+                "Warning acceptance requires a written reason.",
+                nameof(reason));
+        }
+
+        valueGuard.EnsureSafe(checkId, actorObjectId, reason);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            cancellationToken);
+        var result = await context.PrerequisiteResults.FindAsync(
+            [runId, checkId],
+            cancellationToken)
+            ?? throw new KeyNotFoundException(
+                $"Prerequisite result '{runId}/{checkId}' was not found.");
+        if (result.Status != PrerequisiteCheckStatus.Warning)
+        {
+            throw new InvalidOperationException(
+                "Only warning results can be accepted.");
+        }
+
+        result.WarningAcceptedByObjectId = actorObjectId;
+        result.WarningAcceptanceReason = reason;
+        result.WarningAcceptedAt = acceptedAt;
+        await context.SaveChangesAsync(cancellationToken);
+        return new PrerequisiteWarningAcceptance(
+            actorObjectId,
+            reason,
+            acceptedAt);
+    }
+
     private static PrerequisiteCheckResult Map(PrerequisiteResultEntity entity) =>
         new(
             entity.CheckId,
@@ -165,5 +204,13 @@ internal sealed class PrerequisiteRunStore(
             entity.StartedAt,
             entity.CompletedAt,
             entity.ExpiresAt,
-            entity.DurationMilliseconds);
+            entity.DurationMilliseconds,
+            entity.WarningAcceptedByObjectId is null
+                || entity.WarningAcceptanceReason is null
+                || entity.WarningAcceptedAt is null
+                ? null
+                : new PrerequisiteWarningAcceptance(
+                    entity.WarningAcceptedByObjectId,
+                    entity.WarningAcceptanceReason,
+                    entity.WarningAcceptedAt.Value));
 }

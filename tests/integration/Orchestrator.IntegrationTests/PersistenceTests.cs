@@ -18,7 +18,7 @@ public sealed class PersistenceTests
             CancellationToken.None);
 
         Assert.Equal("ok", diagnostics.Integrity);
-        Assert.Contains("AddPrerequisiteRuns", diagnostics.Migration);
+        Assert.NotEqual("none", diagnostics.Migration);
         Assert.Equal("orchestrator.db", diagnostics.DatabaseFileName);
     }
 

@@ -160,5 +160,11 @@ internal sealed class PrerequisiteResultEntity
 
     public long DurationMilliseconds { get; set; }
 
+    public string? WarningAcceptedByObjectId { get; set; }
+
+    public string? WarningAcceptanceReason { get; set; }
+
+    public DateTimeOffset? WarningAcceptedAt { get; set; }
+
     public PrerequisiteRunEntity? Run { get; set; }
 }

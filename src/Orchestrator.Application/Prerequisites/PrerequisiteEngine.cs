@@ -249,7 +249,8 @@ public sealed class PrerequisiteEngine : IPrerequisiteEngine
             completedAt is null
                 ? null
                 : completedAt.Value.Add(definition.Lifetime),
-            durationMilliseconds);
+            durationMilliseconds,
+            null);
         await store.UpdateResultAsync(
             request.Id,
             result,

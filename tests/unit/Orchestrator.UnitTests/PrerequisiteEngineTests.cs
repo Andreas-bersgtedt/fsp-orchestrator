@@ -379,7 +379,8 @@ public sealed class PrerequisiteEngineTests
                                 null,
                                 null,
                                 null,
-                                0)).ToArray()));
+                                0,
+                                null)).ToArray()));
             }
 
             return Task.CompletedTask;
@@ -449,6 +450,17 @@ public sealed class PrerequisiteEngineTests
             {
                 return Task.FromResult(runs.GetValueOrDefault(runId));
             }
+        }
+
+        public Task<PrerequisiteWarningAcceptance> AcceptWarningAsync(
+            Guid runId,
+            string checkId,
+            string actorObjectId,
+            string reason,
+            DateTimeOffset acceptedAt,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
         }
     }
 }

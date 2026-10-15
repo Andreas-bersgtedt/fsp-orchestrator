@@ -44,7 +44,13 @@ public sealed record PrerequisiteCheckResult(
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
     DateTimeOffset? ExpiresAt,
-    long DurationMilliseconds);
+    long DurationMilliseconds,
+    PrerequisiteWarningAcceptance? WarningAcceptance);
+
+public sealed record PrerequisiteWarningAcceptance(
+    string ActorObjectId,
+    string Reason,
+    DateTimeOffset AcceptedAt);
 
 public sealed record PrerequisiteRun(
     Guid Id,
