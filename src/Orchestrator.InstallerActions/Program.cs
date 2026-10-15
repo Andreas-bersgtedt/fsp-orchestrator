@@ -48,7 +48,23 @@ static int EnsureCertificate()
         return 0;
     }
 
-    using var rsa = RSA.Create(3072);
+    var keyCreation = new CngKeyCreationParameters
+    {
+        ExportPolicy = CngExportPolicies.None,
+        KeyCreationOptions = CngKeyCreationOptions.MachineKey,
+        KeyUsage = CngKeyUsages.AllUsages,
+        Provider = CngProvider.MicrosoftSoftwareKeyStorageProvider,
+    };
+    keyCreation.Parameters.Add(
+        new CngProperty(
+            "Length",
+            BitConverter.GetBytes(3072),
+            CngPropertyOptions.None));
+    using var key = CngKey.Create(
+        CngAlgorithm.Rsa,
+        $"FspOrchestrator-{Guid.NewGuid():N}",
+        keyCreation);
+    using var rsa = new RSACng(key);
     var request = new CertificateRequest(
         "CN=localhost",
         rsa,
@@ -77,19 +93,12 @@ static int EnsureCertificate()
     alternativeNames.AddIpAddress(System.Net.IPAddress.IPv6Loopback);
     request.CertificateExtensions.Add(alternativeNames.Build());
 
-    using var generated = request.CreateSelfSigned(
+    using var certificate = request.CreateSelfSigned(
         DateTimeOffset.UtcNow.AddMinutes(-5),
         DateTimeOffset.UtcNow.AddYears(2));
-    var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-    var pfx = generated.Export(X509ContentType.Pfx, password);
-    using var persisted = X509CertificateLoader.LoadPkcs12(
-        pfx,
-        password,
-        X509KeyStorageFlags.MachineKeySet
-            | X509KeyStorageFlags.PersistKeySet);
-    persisted.FriendlyName = certificateFriendlyName;
-    personalStore.Add(persisted);
-    EnsureTrusted(persisted);
+    certificate.FriendlyName = certificateFriendlyName;
+    personalStore.Add(certificate);
+    EnsureTrusted(certificate);
     return 0;
 }
 
