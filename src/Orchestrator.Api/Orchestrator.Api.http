@@ -17,6 +17,47 @@ GET {{baseUrl}}/api/session
 Accept: application/json
 Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
 
+### Get prerequisite catalog
+GET {{baseUrl}}/api/prerequisites/catalog
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Start prerequisite run
+POST {{baseUrl}}/api/prerequisites/runs
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "operation": "deploy",
+  "inputs": {
+    "target": "environment-a"
+  }
+}
+
+### Get prerequisite run
+GET {{baseUrl}}/api/prerequisites/runs/{{runId}}
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Cancel prerequisite run
+POST {{baseUrl}}/api/prerequisites/runs/{{runId}}/cancel
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Validate prerequisite run for apply
+POST {{baseUrl}}/api/prerequisites/runs/{{runId}}/validate
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "operation": "deploy",
+  "inputs": {
+    "target": "environment-a"
+  }
+}
+
 ### Get database diagnostics
 GET {{baseUrl}}/api/system/database
 Accept: application/json

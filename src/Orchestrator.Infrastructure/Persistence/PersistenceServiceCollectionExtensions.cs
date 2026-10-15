@@ -1,4 +1,5 @@
 using Fsp.Orchestrator.Application.Persistence;
+using Fsp.Orchestrator.Application.Prerequisites;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddSingleton<IInventoryStore, InventoryStore>();
         services.AddSingleton<IJobStore, JobStore>();
         services.AddSingleton<IAuditMetadataStore, AuditMetadataStore>();
+        services.AddSingleton<IPrerequisiteRunStore, PrerequisiteRunStore>();
         services.AddSingleton<IDatabaseMaintenance>(
             provider => new DatabaseMaintenance(
                 provider.GetRequiredService<IDbContextFactory<OrchestratorDbContext>>(),

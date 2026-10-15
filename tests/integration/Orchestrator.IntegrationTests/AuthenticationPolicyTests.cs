@@ -168,10 +168,73 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
             await restoreResponse.Content.ReadFromJsonAsync<DatabaseRestoreResponse>();
 
         Assert.Equal("ok", diagnostics!.Integrity);
-        Assert.Contains("InitialPersistence", diagnostics.Migration);
+        Assert.Contains("AddPrerequisiteRuns", diagnostics.Migration);
         Assert.Equal(HttpStatusCode.Created, backupResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
         Assert.True(restore!.Restored);
+    }
+
+    [Fact]
+    public async Task OperatorCanRunAndGatePrerequisites()
+    {
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.Reader},{OrchestratorRoles.Operator}");
+
+        var catalog =
+            await client.GetFromJsonAsync<PrerequisiteCatalogResponse>(
+                "/api/prerequisites/catalog");
+        var startResponse = await client.PostAsJsonAsync(
+            "/api/prerequisites/runs",
+            new StartPrerequisiteRunRequest
+            {
+                Operation = "deploy",
+                Inputs = new Dictionary<string, string>
+                {
+                    ["target"] = "environment-a",
+                },
+            });
+        var started =
+            await startResponse.Content.ReadFromJsonAsync<StartPrerequisiteRunResponse>();
+        Assert.NotNull(started);
+        PrerequisiteRunResponse? run = null;
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            run = await client.GetFromJsonAsync<PrerequisiteRunResponse>(
+                $"/api/prerequisites/runs/{started.RunId}");
+            if (run is { Status: not ("Pending" or "Running") })
+            {
+                break;
+            }
+
+            await Task.Delay(20);
+        }
+
+        var allowed = await client.PostAsJsonAsync(
+            $"/api/prerequisites/runs/{started.RunId}/validate",
+            new ValidatePrerequisiteRunRequest
+            {
+                Operation = "deploy",
+                Inputs = new Dictionary<string, string>
+                {
+                    ["target"] = "environment-a",
+                },
+            });
+        var mismatch = await client.PostAsJsonAsync(
+            $"/api/prerequisites/runs/{started.RunId}/validate",
+            new ValidatePrerequisiteRunRequest
+            {
+                Operation = "configure",
+                Inputs = new Dictionary<string, string>
+                {
+                    ["target"] = "environment-a",
+                },
+            });
+
+        Assert.Empty(catalog!.Checks);
+        Assert.Equal(HttpStatusCode.Accepted, startResponse.StatusCode);
+        Assert.Equal("Passed", run!.Status);
+        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, mismatch.StatusCode);
     }
 
     [Fact]
