@@ -491,6 +491,88 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task DeploymentAdminCanPreviewApproveAndInvalidateTypedProfile()
+    {
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.DeploymentAdmin},"
+            + $"{OrchestratorRoles.Operator},{OrchestratorRoles.Reader}");
+        _ = await client.PostAsJsonAsync(
+            "/api/azure/session",
+            new AzureTokenHandoffRequest
+            {
+                AccessToken = new string('x', 200),
+            });
+        var profileId = Guid.NewGuid();
+        var request = ValidDeploymentProfile();
+        var saved = await client.PutAsJsonAsync(
+            $"/api/deployment-profiles/{profileId}",
+            request);
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        var profile = request.ToProfile(profileId);
+        var start = await client.PostAsJsonAsync(
+            "/api/prerequisites/runs",
+            new StartPrerequisiteRunRequest
+            {
+                Operation = "deploy",
+                Inputs = new Dictionary<string, string>(
+                    profile.ToPrerequisiteInputs(),
+                    StringComparer.Ordinal),
+            });
+        var started =
+            await start.Content.ReadFromJsonAsync<StartPrerequisiteRunResponse>();
+        PrerequisiteRunResponse? run = null;
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            run = await client.GetFromJsonAsync<PrerequisiteRunResponse>(
+                $"/api/prerequisites/runs/{started!.RunId}");
+            if (run is { Status: not ("Pending" or "Running") })
+            {
+                break;
+            }
+
+            await Task.Delay(20);
+        }
+
+        var previewResponse = await client.PostAsJsonAsync(
+            $"/api/deployment-profiles/{profileId}/preview",
+            new PreviewDeploymentProfileRequest
+            {
+                PrerequisiteRunId = started!.RunId,
+            });
+        using var previewBody = JsonDocument.Parse(
+            await previewResponse.Content.ReadAsStringAsync());
+        var previewId = previewBody.RootElement.GetProperty("id").GetGuid();
+        var approvalResponse = await client.PostAsJsonAsync(
+            $"/api/deployment-profiles/{profileId}/approval",
+            new ApproveDeploymentProfileRequest
+            {
+                PreviewId = previewId,
+            });
+        var approval =
+            await approvalResponse.Content.ReadFromJsonAsync<DeploymentApproval>();
+
+        Assert.Equal("Passed", run!.Status);
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, approvalResponse.StatusCode);
+        Assert.Equal(1, approval!.CreateCount);
+        Assert.Equal(1, approval.ModifyCount);
+        Assert.Equal(1, approval.DeleteCount);
+
+        var changed = await client.PutAsJsonAsync(
+            $"/api/deployment-profiles/{profileId}",
+            ValidDeploymentProfile(nodeCount: 4));
+        var state =
+            await changed.Content.ReadFromJsonAsync<DeploymentProfileStateResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        Assert.Null(state!.Document.PrerequisiteRunId);
+        Assert.Null(state.Document.CurrentPreviewId);
+        Assert.Null(state.Document.CurrentApprovalId);
+        Assert.Null(state.Preview);
+        Assert.Null(state.Approval);
+    }
+
+    [Fact]
     public async Task ReaderCannotEstablishAzureSession()
     {
         using var client = CreateAuthenticatedClient(OrchestratorRoles.Reader);
@@ -710,6 +792,10 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                     services.AddSingleton<
                         IAzureResourceDiscovery,
                         TestAzureResourceDiscovery>();
+                    services.RemoveAll<IArmDeploymentPreviewGateway>();
+                    services.AddSingleton<
+                        IArmDeploymentPreviewGateway,
+                        TestArmDeploymentPreviewGateway>();
                     services.AddAuthentication(
                             options =>
                             {
@@ -853,4 +939,69 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                 ]);
         }
     }
+
+    private sealed class TestArmDeploymentPreviewGateway
+        : IArmDeploymentPreviewGateway
+    {
+        public Task<ArmDeploymentPreview> ValidateAndPreviewAsync(
+            DeploymentProfile profile,
+            DeploymentActor actor,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var prefix =
+                $"/subscriptions/{profile.SubscriptionId:D}/resourceGroups/"
+                + profile.ResourceGroupName
+                + "/providers";
+            return Task.FromResult(
+                new ArmDeploymentPreview(
+                    "validation-correlation",
+                    "what-if-correlation",
+                    [
+                        new(
+                            $"{prefix}/Microsoft.ContainerService/managedClusters/{profile.AksName}",
+                            DeploymentChangeType.Modify,
+                            """{"sku":"old"}""",
+                            """{"sku":"new"}""",
+                            """{"path":"sku"}"""),
+                        new(
+                            $"{prefix}/Microsoft.ManagedIdentity/userAssignedIdentities/{profile.AksName}-identity",
+                            DeploymentChangeType.Create,
+                            null,
+                            """{"location":"swedencentral"}""",
+                            null),
+                        new(
+                            $"{prefix}/Microsoft.Network/publicIPAddresses/old",
+                            DeploymentChangeType.Delete,
+                            """{"name":"old"}""",
+                            null,
+                            null),
+                    ]));
+        }
+    }
+
+    private static SaveDeploymentProfileRequest ValidDeploymentProfile(
+        int nodeCount = 3) =>
+        new()
+        {
+            Name = "Production FSP",
+            SubscriptionId = TestAzureResourceDiscovery.SubscriptionId,
+            ResourceGroupName = "fsp-rg",
+            DeploymentName = "fsp-deployment",
+            Location = "swedencentral",
+            KubernetesVersion = "1.32.7",
+            NodeVmSku = "Standard_D4s_v5",
+            NodeCount = nodeCount,
+            RequestedRegionalVcpu = 12,
+            AksName = "fsp-aks",
+            VnetName = "fsp-vnet",
+            SubnetName = "aks-subnet",
+            VnetCidr = "10.0.0.0/16",
+            AksSubnetCidr = "10.0.0.0/24",
+            PodCidr = "10.1.0.0/16",
+            ServiceCidr = "10.2.0.0/16",
+            DnsServiceIp = "10.2.0.10",
+            PrivateDnsZoneName =
+                "privatelink.swedencentral.azmk8s.io",
+        };
 }

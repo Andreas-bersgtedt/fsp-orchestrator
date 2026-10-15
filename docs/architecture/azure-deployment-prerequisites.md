@@ -43,3 +43,8 @@ window. The prerequisite gate returns
 `prerequisite.immediate_recheck_required` after that window, even though the
 normal five-minute result lifetime has not expired. Apply cannot continue until
 those checks run again.
+
+The deployment profile preview supplies these inputs directly from its typed
+document. A profile fingerprint change clears the associated prerequisite run,
+so a run from an earlier subscription, region, SKU, network, or existing
+resource selection cannot authorize a later preview.

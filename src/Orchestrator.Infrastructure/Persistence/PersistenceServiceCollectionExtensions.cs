@@ -30,6 +30,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddSingleton<IJobStore, JobStore>();
         services.AddSingleton<IAuditMetadataStore, AuditMetadataStore>();
         services.AddSingleton<IPrerequisiteRunStore, PrerequisiteRunStore>();
+        services.AddSingleton<IDeploymentProfileStore, DeploymentProfileStore>();
         services.AddSingleton<
             IDeploymentObservationStore,
             DeploymentObservationStore>();

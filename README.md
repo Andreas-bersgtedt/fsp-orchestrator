@@ -194,6 +194,9 @@ Azure deployment inputs pass the
 [Azure prerequisite checker set](./docs/architecture/azure-deployment-prerequisites.md)
 for provider registration, exact RBAC actions, quota, regional Kubernetes
 versions, names, network ranges, and private DNS before preview or apply.
+The [deployment profile preview](./docs/architecture/deployment-profile-preview.md)
+stores the typed profile, ARM what-if changes, and approval counts for the exact
+profile fingerprint.
 
 Registered deployments are polled by the
 [observation scheduler](./docs/architecture/deployment-observations.md).

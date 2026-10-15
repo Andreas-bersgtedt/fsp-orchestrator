@@ -180,6 +180,53 @@ Content-Type: application/json
   "credentialReference": "https://example.vault.azure.net/secrets/fsp-manager-token"
 }
 
+### Save a typed Azure deployment profile
+PUT {{baseUrl}}/api/deployment-profiles/{{profileId}}
+Accept: application/json
+Authorization: ******
+Content-Type: application/json
+
+{
+  "name": "Production FSP",
+  "subscriptionId": "{{subscriptionId}}",
+  "resourceGroupName": "fsp-rg",
+  "deploymentName": "fsp-deployment",
+  "location": "swedencentral",
+  "kubernetesVersion": "1.32.7",
+  "nodeVmSku": "Standard_D4s_v5",
+  "nodeCount": 3,
+  "requestedRegionalVcpu": 12,
+  "aksName": "fsp-aks",
+  "vnetName": "fsp-vnet",
+  "subnetName": "aks-subnet",
+  "vnetCidr": "10.0.0.0/16",
+  "aksSubnetCidr": "10.0.0.0/24",
+  "podCidr": "10.1.0.0/16",
+  "serviceCidr": "10.2.0.0/16",
+  "dnsServiceIp": "10.2.0.10",
+  "privateDnsZoneName": "privatelink.swedencentral.azmk8s.io"
+}
+
+### Run ARM validation and structured what-if
+POST {{baseUrl}}/api/deployment-profiles/{{profileId}}/preview
+Accept: application/json
+Authorization: ******
+Content-Type: application/json
+
+{
+  "prerequisiteRunId": "{{runId}}"
+}
+
+### Approve the exact current preview and its change counts
+POST {{baseUrl}}/api/deployment-profiles/{{profileId}}/approval
+Accept: application/json
+Authorization: ******
+Content-Type: application/json
+
+{
+  "previewId": "{{previewId}}"
+}
+
 ### Get a registered deployment
 GET {{baseUrl}}/api/deployments/{{deploymentId}}
 Accept: application/json

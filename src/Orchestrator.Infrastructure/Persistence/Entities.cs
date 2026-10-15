@@ -197,3 +197,101 @@ internal sealed class PrerequisiteResultEntity
 
     public PrerequisiteRunEntity? Run { get; set; }
 }
+
+internal sealed class DeploymentProfileEntity
+{
+    public Guid Id { get; set; }
+
+    public required string ProfileJson { get; set; }
+
+    public required string Fingerprint { get; set; }
+
+    public long Revision { get; set; }
+
+    public Guid? PrerequisiteRunId { get; set; }
+
+    public Guid? CurrentPreviewId { get; set; }
+
+    public Guid? CurrentApprovalId { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public DateTimeOffset UpdatedAt { get; set; }
+
+    public List<DeploymentPreviewEntity> Previews { get; } = [];
+
+    public List<DeploymentApprovalEntity> Approvals { get; } = [];
+}
+
+internal sealed class DeploymentPreviewEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid ProfileId { get; set; }
+
+    public required string ProfileFingerprint { get; set; }
+
+    public Guid PrerequisiteRunId { get; set; }
+
+    public required string ValidationCorrelationId { get; set; }
+
+    public required string WhatIfCorrelationId { get; set; }
+
+    public int CreateCount { get; set; }
+
+    public int ModifyCount { get; set; }
+
+    public int DeleteCount { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public DeploymentProfileEntity? Profile { get; set; }
+
+    public List<DeploymentWhatIfChangeEntity> Changes { get; } = [];
+}
+
+internal sealed class DeploymentWhatIfChangeEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid PreviewId { get; set; }
+
+    public required string ResourceId { get; set; }
+
+    public Application.Deployments.DeploymentChangeType ChangeType { get; set; }
+
+    public string? BeforeJson { get; set; }
+
+    public string? AfterJson { get; set; }
+
+    public string? DeltaJson { get; set; }
+
+    public DeploymentPreviewEntity? Preview { get; set; }
+}
+
+internal sealed class DeploymentApprovalEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid ProfileId { get; set; }
+
+    public Guid PreviewId { get; set; }
+
+    public required string ProfileFingerprint { get; set; }
+
+    public required string ActorTenantId { get; set; }
+
+    public required string ActorObjectId { get; set; }
+
+    public int CreateCount { get; set; }
+
+    public int ModifyCount { get; set; }
+
+    public int DeleteCount { get; set; }
+
+    public DateTimeOffset ApprovedAt { get; set; }
+
+    public DateTimeOffset? InvalidatedAt { get; set; }
+
+    public DeploymentProfileEntity? Profile { get; set; }
+}
