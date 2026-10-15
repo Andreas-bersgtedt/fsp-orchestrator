@@ -8,9 +8,9 @@ recover FSP environments from one browser application.
 ## Project status
 
 The FSP 3.1.0 contract milestone is complete. The repository now contains the
-initial .NET 10 API and React application shell. Windows service hosting,
-authentication, persistence, deployment workflows, and installable packages
-are not available yet.
+.NET 10 Windows service, React operator shell, Entra PKCE authentication,
+SQLite persistence, prerequisite workflows, and a WiX installer. Deployment
+and remote FSP management workflows remain under development.
 
 The first planned release targets:
 
@@ -124,9 +124,9 @@ tests/
   installer/
 ```
 
-The Domain, Application, Infrastructure, API, Web, unit-test, architecture-test,
-and contract-test projects are present. Installer and deployment projects will
-be added by their assigned milestones.
+The Domain, Application, Infrastructure, API, Web, installer, unit-test,
+architecture-test, and contract-test projects are present. Deployment projects
+will be added by their assigned milestones.
 
 ## Development
 
@@ -177,6 +177,10 @@ Protected operations use the typed
 [prerequisite checker engine](./docs/architecture/prerequisite-engine.md) for
 dependency ordering, bounded concurrency, timeout/cancellation, input
 fingerprints, expiry, and blocking apply gates.
+
+Build, signing, certificate lifecycle, repair, upgrade, and removal behavior
+for the WiX package are documented in the
+[Windows installer guide](./docs/setup/windows-installer.md).
 
 The engineering sequence is:
 

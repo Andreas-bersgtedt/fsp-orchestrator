@@ -1,0 +1,146 @@
+name: Windows installer
+
+on:
+  pull_request:
+    paths:
+      - "src/Orchestrator.Api/**"
+      - "src/Orchestrator.Application/**"
+      - "src/Orchestrator.Domain/**"
+      - "src/Orchestrator.Infrastructure/**"
+      - "src/Orchestrator.Installer/**"
+      - "src/Orchestrator.InstallerActions/**"
+      - "src/Orchestrator.Web/**"
+      - "tests/installer/**"
+      - "eng/Build-Installer.ps1"
+      - ".github/workflows/installer.yml"
+      - "global.json"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "src/Orchestrator.Api/**"
+      - "src/Orchestrator.Application/**"
+      - "src/Orchestrator.Domain/**"
+      - "src/Orchestrator.Infrastructure/**"
+      - "src/Orchestrator.Installer/**"
+      - "src/Orchestrator.InstallerActions/**"
+      - "src/Orchestrator.Web/**"
+      - "tests/installer/**"
+      - "eng/Build-Installer.ps1"
+      - ".github/workflows/installer.yml"
+      - "global.json"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and exercise MSI
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/Orchestrator.Web/package-lock.json
+
+      - name: Build baseline installer
+        shell: pwsh
+        run: >-
+          ./eng/Build-Installer.ps1
+          -Version 0.1.0
+          -OutputDirectory artifacts/installer/baseline
+
+      - name: Build upgrade installer
+        shell: pwsh
+        run: >-
+          ./eng/Build-Installer.ps1
+          -Version 0.1.1
+          -OutputDirectory artifacts/installer/upgrade
+
+      - name: Exercise install, repair, upgrade, and removal
+        shell: pwsh
+        run: >-
+          ./tests/installer/Test-Installer.ps1
+          -BaselineMsi artifacts/installer/baseline/Fsp.Orchestrator-0.1.0-win-x64.msi
+          -UpgradeMsi artifacts/installer/upgrade/Fsp.Orchestrator-0.1.1-win-x64.msi
+
+      - name: Upload installer test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-test-logs
+          path: ${{ runner.temp }}/fsp-orchestrator-installer
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload upgrade MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsp-orchestrator-installer
+          path: artifacts/installer/upgrade/Fsp.Orchestrator-0.1.1-win-x64.msi
+          if-no-files-found: error
+          retention-days: 7
+
+  sign:
+    name: Sign release MSI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-test
+    runs-on: windows-latest
+    environment: installer-signing
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/Orchestrator.Web/package-lock.json
+
+      - name: Import signing certificate
+        id: signing
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.INSTALLER_SIGNING_CERTIFICATE_BASE64 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.INSTALLER_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $bytes = [Convert]::FromBase64String($env:SIGNING_CERTIFICATE_BASE64)
+          $path = Join-Path $env:RUNNER_TEMP 'installer-signing.pfx'
+          [IO.File]::WriteAllBytes($path, $bytes)
+          $securePassword = ConvertTo-SecureString $env:SIGNING_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $certificate = Import-PfxCertificate -FilePath $path -CertStoreLocation Cert:\CurrentUser\My -Password $securePassword
+          "thumbprint=$($certificate.Thumbprint)" >> $env:GITHUB_OUTPUT
+
+      - name: Build and sign release installer
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          ./eng/Build-Installer.ps1 `
+            -Version $version `
+            -OutputDirectory artifacts/installer/signed `
+            -SigningThumbprint '${{ steps.signing.outputs.thumbprint }}'
+
+      - name: Upload signed MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsp-orchestrator-installer-signed
+          path: artifacts/installer/signed/*.msi
+          if-no-files-found: error

@@ -4,6 +4,7 @@
     <Project Path="src/Orchestrator.Application/Orchestrator.Application.csproj" />
     <Project Path="src/Orchestrator.Domain/Orchestrator.Domain.csproj" />
     <Project Path="src/Orchestrator.Infrastructure/Orchestrator.Infrastructure.csproj" />
+    <Project Path="src/Orchestrator.InstallerActions/Orchestrator.InstallerActions.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/architecture/">
