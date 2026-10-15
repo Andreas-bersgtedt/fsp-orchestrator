@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
 const string certificateFriendlyName = "FSP Orchestrator localhost";
 const string dataDirectoryName = "FspOrchestrator";
@@ -14,7 +15,8 @@ try
 {
     return args switch
     {
-        ["certificate", "ensure"] => EnsureCertificate(),
+        ["certificate", "ensure", var configurationPath] =>
+            EnsureCertificate(configurationPath),
         ["certificate", "remove"] => RemoveCertificate(),
         ["data", "prompt-retention", var marker] => PromptForRetention(marker),
         ["data", "mark-removal", var marker] => MarkRemoval(marker),
@@ -29,7 +31,7 @@ catch (Exception exception)
     return 1;
 }
 
-static int EnsureCertificate()
+static int EnsureCertificate(string configurationPath)
 {
     using var personalStore = new X509Store(
         StoreName.My,
@@ -45,6 +47,7 @@ static int EnsureCertificate()
     if (existing is not null)
     {
         EnsureTrusted(existing);
+        WriteCertificateConfiguration(configurationPath, existing.Thumbprint);
         return 0;
     }
 
@@ -99,6 +102,7 @@ static int EnsureCertificate()
     certificate.FriendlyName = certificateFriendlyName;
     personalStore.Add(certificate);
     EnsureTrusted(certificate);
+    WriteCertificateConfiguration(configurationPath, certificate.Thumbprint);
     return 0;
 }
 
@@ -231,6 +235,40 @@ static void RemoveTrusted(string thumbprint)
     {
         rootStore.Remove(certificate);
         certificate.Dispose();
+    }
+}
+
+static void WriteCertificateConfiguration(
+    string configurationPath,
+    string thumbprint)
+{
+    var configuration = new
+    {
+        Orchestrator = new
+        {
+            Certificate = new
+            {
+                Thumbprint = thumbprint,
+                StoreLocation = StoreLocation.LocalMachine.ToString(),
+            },
+        },
+    };
+    var temporaryPath = $"{configurationPath}.{Guid.NewGuid():N}.tmp";
+    try
+    {
+        File.WriteAllText(
+            temporaryPath,
+            JsonSerializer.Serialize(
+                configuration,
+                new JsonSerializerOptions { WriteIndented = true }));
+        File.Move(temporaryPath, configurationPath, overwrite: true);
+    }
+    finally
+    {
+        if (File.Exists(temporaryPath))
+        {
+            File.Delete(temporaryPath);
+        }
     }
 }
 

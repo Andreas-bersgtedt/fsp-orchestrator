@@ -115,6 +115,15 @@ function Assert-CertificateTrusted {
         throw 'The installer did not provision the localhost certificate.'
     }
 
+    $productionSettings = Get-Content `
+        (Join-Path $installDirectory 'appsettings.Production.json') `
+        -Raw |
+        ConvertFrom-Json
+    if ($productionSettings.Orchestrator.Certificate.Thumbprint -ne
+        $certificate.Thumbprint) {
+        throw 'Production settings do not pin the installer-managed certificate.'
+    }
+
     $chain = [Security.Cryptography.X509Certificates.X509Chain]::new()
     try {
         $chain.ChainPolicy.RevocationMode =

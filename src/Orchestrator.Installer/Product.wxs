@@ -59,7 +59,7 @@
     <CustomAction
       Id="EnsureCertificate"
       FileRef="InstallerActionsExecutable"
-      ExeCommand="certificate ensure"
+      ExeCommand="certificate ensure &quot;[INSTALLFOLDER]appsettings.Production.json&quot;"
       Execute="deferred"
       Impersonate="no"
       Return="check" />
