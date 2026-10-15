@@ -5,9 +5,15 @@ using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
 
+var applicationArgs = await ProcessRestartBootstrap.PrepareAsync(args);
+if (applicationArgs is null)
+{
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
-    Args = args,
+    Args = applicationArgs,
     WebRootPath = SpaWebRoot.Resolve(),
 });
 
@@ -19,6 +25,10 @@ builder.Host.UseWindowsService(options =>
 var hostingRuntime = LoopbackHosting.Configure(builder);
 builder.Services.AddSingleton(hostingRuntime);
 builder.Services.AddSingleton<StartupReadiness>();
+builder.Services.AddSingleton<IIdentityConfigurationStore, IdentityConfigurationStore>();
+builder.Services.AddSingleton<IApplicationRestartScheduler, ApplicationRestartScheduler>();
+builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
+builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddOpenApi();
@@ -53,6 +63,7 @@ var api = app.MapGroup("/api")
 api.MapHealth();
 api.MapAuthentication();
 api.MapEntraRegistrations();
+app.MapBootstrap();
 api.MapMethods(
         "/{**path}",
         ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],

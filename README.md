@@ -164,6 +164,9 @@ protected API routes return `401`. See the
 [authentication decision](./docs/architecture/entra-user-authentication.md).
 The exact SPA/API registration shape and validation codes are documented in
 [Microsoft Entra application registrations](./docs/setup/entra-application-registrations.md).
+An unconfigured installation offers a built-in, credential-free
+[first-run bootstrap flow](./docs/setup/entra-bootstrap.md) for discovering or
+creating registrations and atomically committing only public identifiers.
 
 The engineering sequence is:
 

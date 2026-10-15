@@ -21,9 +21,11 @@ Create **FSP Orchestrator SPA** with:
 
 The setup UI requests `Application.Read.All` only when checking whether selected
 enterprise applications exist. That permission requires tenant admin consent.
-The bootstrap creation workflow in #54 requests
-`Application.ReadWrite.OwnedBy` only when the operator chooses to create
-registrations.
+The [bootstrap workflow](./entra-bootstrap.md) uses delegated
+`Application.ReadWrite.All` and `AppRoleAssignment.ReadWrite.All` only when an
+administrator chooses to create the pair and assign the first SecurityAdmin.
+Microsoft Graph does not expose `Application.ReadWrite.OwnedBy` as a delegated
+public-client scope.
 
 ## API registration
 

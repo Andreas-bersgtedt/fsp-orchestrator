@@ -16,6 +16,12 @@ public static class LoopbackHosting
         var stateDirectory = LocalStateDirectory.Create(
             builder.Configuration["Orchestrator:DataDirectory"],
             builder.Environment);
+        builder.Configuration.AddJsonFile(
+            Path.Combine(
+                stateDirectory.Path,
+                IdentityConfigurationStore.FileName),
+            optional: true,
+            reloadOnChange: false);
         var certificate = LocalhostCertificate.Load(
             builder.Configuration["Orchestrator:Certificate:Thumbprint"],
             builder.Configuration["Orchestrator:Certificate:StoreLocation"]);

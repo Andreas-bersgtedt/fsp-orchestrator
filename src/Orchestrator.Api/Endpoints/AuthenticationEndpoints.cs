@@ -25,7 +25,13 @@ public static class AuthenticationEndpoints
                             configuration.SpaClientId,
                             configuration.ClientId,
                             configuration.ApiScope,
-                            configuration.RedirectUri));
+                            configuration.RedirectUri,
+                            new BootstrapAuthenticationConfigurationResponse(
+                                BootstrapAuthenticationConfiguration.SpaClientId,
+                                BootstrapAuthenticationConfiguration.Authority,
+                                BootstrapAuthenticationConfiguration.RedirectUri,
+                                BootstrapAuthenticationConfiguration.DiscoveryScopes,
+                                BootstrapAuthenticationConfiguration.CreationScopes)));
                 })
             .AllowAnonymous()
             .WithName("GetAuthenticationConfiguration")
@@ -90,7 +96,16 @@ public sealed record AuthenticationConfigurationResponse(
     string SpaClientId,
     string ApiClientId,
     string ApiScope,
-    string RedirectUri);
+    string RedirectUri,
+    BootstrapAuthenticationConfigurationResponse Bootstrap);
+
+/// <summary>Public bootstrap SPA settings used before tenant registrations exist.</summary>
+public sealed record BootstrapAuthenticationConfigurationResponse(
+    string SpaClientId,
+    string Authority,
+    string RedirectUri,
+    IReadOnlyList<string> DiscoveryScopes,
+    IReadOnlyList<string> CreationScopes);
 
 /// <summary>Safe information about the signed-in Orchestrator operator.</summary>
 public sealed record SessionResponse(

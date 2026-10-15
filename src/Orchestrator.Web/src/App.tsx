@@ -22,6 +22,10 @@ const RegistrationSetup = lazy(async () => {
   const module = await import('./identity/RegistrationSetup.tsx')
   return { default: module.RegistrationSetup }
 })
+const BootstrapSetup = lazy(async () => {
+  const module = await import('./identity/BootstrapSetup.tsx')
+  return { default: module.BootstrapSetup }
+})
 
 type HealthResponse = {
   status: string
@@ -126,6 +130,16 @@ export default function App({
 
           <AuthenticationPanel authentication={authentication} />
 
+          {authentication.kind === 'bootstrap-signed-in' ? (
+            <Suspense fallback={<Spinner label="Loading Entra bootstrap setup" />}>
+              <BootstrapSetup
+                account={authentication.account}
+                acquireAccessToken={authentication.acquireAccessToken}
+                bootstrap={authentication.bootstrap}
+              />
+            </Suspense>
+          ) : null}
+
           {authentication.kind === 'signed-in' &&
           authentication.session.permissions.SecurityAdmin ? (
             <Suspense fallback={<Spinner label="Loading Entra registration setup" />}>
@@ -200,6 +214,45 @@ function AuthenticationPanel({
     )
   }
 
+  if (authentication.kind === 'bootstrap-signed-out') {
+    return (
+      <Card className="auth-panel">
+        <CardHeader
+          header={<Text weight="semibold">Configure Microsoft Entra</Text>}
+          description={
+            <Text>
+              Sign in with your organizational account using the built-in public
+              bootstrap SPA. No client secret or application key is used.
+            </Text>
+          }
+        />
+        <CardFooter>
+          <Button
+            appearance="primary"
+            onClick={() => void authentication.signIn()}
+          >
+            Sign in to configure Entra
+          </Button>
+        </CardFooter>
+      </Card>
+    )
+  }
+
+  if (authentication.kind === 'bootstrap-signed-in') {
+    return (
+      <Card className="auth-panel">
+        <CardHeader
+          header={
+            <Text weight="semibold">
+              Bootstrap session: {authentication.account.displayName}
+            </Text>
+          }
+          description={<Text>{authentication.account.username}</Text>}
+        />
+      </Card>
+    )
+  }
+
   if (authentication.kind === 'signed-out') {
     return (
       <Card className="auth-panel">
@@ -267,7 +320,8 @@ function AuthenticationPanel({
     <div className="auth-panel auth-progress">
       <Spinner
         label={
-          authentication.kind === 'signing-in'
+          authentication.kind === 'signing-in' ||
+          authentication.kind === 'bootstrap-signing-in'
             ? 'Completing Microsoft sign-in'
             : 'Loading authentication'
         }
@@ -281,6 +335,21 @@ function AccountControl({
 }: {
   authentication: AuthenticationState
 }) {
+  if (authentication.kind === 'bootstrap-signed-in') {
+    return (
+      <div className="account-control">
+        <Text size={200}>{authentication.account.username}</Text>
+        <Button
+          appearance="subtle"
+          size="small"
+          onClick={() => void authentication.signOut()}
+        >
+          Sign out
+        </Button>
+      </div>
+    )
+  }
+
   if (authentication.kind !== 'signed-in') {
     return null
   }
