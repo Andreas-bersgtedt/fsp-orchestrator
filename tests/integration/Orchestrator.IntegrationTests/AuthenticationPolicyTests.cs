@@ -13,7 +13,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Fsp.Orchestrator.IntegrationTests;
@@ -459,6 +461,7 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.UseEnvironment(Environments.Development);
             builder.UseSetting("urls", LoopbackHosting.Origin);
             builder.UseSetting(
@@ -475,6 +478,7 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
             builder.ConfigureTestServices(
                 services =>
                 {
+                    services.RemoveAll<IPrerequisiteCheck>();
                     services.AddAuthentication(
                             options =>
                             {

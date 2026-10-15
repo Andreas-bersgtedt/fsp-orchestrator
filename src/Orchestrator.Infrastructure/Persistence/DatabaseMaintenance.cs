@@ -64,10 +64,14 @@ internal sealed class DatabaseMaintenance(
             var migration = (await context.Database.GetAppliedMigrationsAsync(
                     cancellationToken))
                 .LastOrDefault() ?? "none";
+            var pendingMigrationCount = (await context.Database.GetPendingMigrationsAsync(
+                    cancellationToken))
+                .Count();
             return new DatabaseDiagnostics(
                 Path.GetFileName(databasePath),
                 integrity,
                 migration,
+                pendingMigrationCount,
                 await context.Deployments.LongCountAsync(cancellationToken),
                 await context.Jobs.LongCountAsync(cancellationToken),
                 await context.AuditEvents.LongCountAsync(cancellationToken),

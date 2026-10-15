@@ -13,6 +13,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Fsp.Orchestrator.IntegrationTests;
 
@@ -240,6 +241,7 @@ public sealed class BootstrapEndpointTests : IAsyncLifetime, IDisposable
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.UseEnvironment(Environments.Development);
             builder.UseSetting("urls", LoopbackHosting.Origin);
             builder.UseSetting(

@@ -33,6 +33,7 @@ public static class PrerequisiteEndpoints
                 async Task<Accepted<StartPrerequisiteRunResponse>> (
                     StartPrerequisiteRunRequest request,
                     IPrerequisiteRunCoordinator coordinator,
+                    ClaimsPrincipal user,
                     CancellationToken cancellationToken) =>
                 {
                     var runId = Guid.NewGuid();
@@ -40,7 +41,7 @@ public static class PrerequisiteEndpoints
                         new PrerequisiteRunRequest(
                             runId,
                             request.Operation,
-                            request.Inputs,
+                            EnrichInputs(request.Inputs, user),
                             request.CheckIds),
                         cancellationToken);
                     return TypedResults.Accepted(
@@ -101,12 +102,13 @@ public static class PrerequisiteEndpoints
                     Guid runId,
                     ValidatePrerequisiteRunRequest request,
                     IPrerequisiteGate gate,
+                    ClaimsPrincipal user,
                     CancellationToken cancellationToken) =>
                 {
                     var result = await gate.ValidateAsync(
                         runId,
                         request.Operation,
-                        request.Inputs,
+                        EnrichInputs(request.Inputs, user),
                         cancellationToken);
                     var response = new PrerequisiteGateResponse(
                         result.Allowed,
@@ -163,6 +165,32 @@ public static class PrerequisiteEndpoints
             .Produces(StatusCodes.Status404NotFound);
 
         return endpoints;
+    }
+
+    private static Dictionary<string, string> EnrichInputs(
+        IReadOnlyDictionary<string, string> inputs,
+        ClaimsPrincipal user)
+    {
+        var enriched = new Dictionary<string, string>(
+            inputs,
+            StringComparer.Ordinal)
+        {
+            [PrerequisiteSystemInputKeys.CurrentTenantId] =
+                user.FindFirstValue("tid") ?? string.Empty,
+            [PrerequisiteSystemInputKeys.CurrentClientId] =
+                user.FindFirstValue("azp")
+                    ?? user.FindFirstValue("appid")
+                    ?? string.Empty,
+            [PrerequisiteSystemInputKeys.CurrentScopes] =
+                user.FindFirstValue("scp") ?? string.Empty,
+            [PrerequisiteSystemInputKeys.CurrentRoles] = string.Join(
+                ",",
+                user.FindAll("roles")
+                    .Select(claim => claim.Value)
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)),
+        };
+        return enriched;
     }
 
     private static async Task<Results<

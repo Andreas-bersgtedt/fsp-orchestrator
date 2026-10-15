@@ -42,6 +42,16 @@ builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationR
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
+builder.Services.AddHttpClient(nameof(LocalPrerequisiteProbe));
+builder.Services.AddSingleton<ILocalPrerequisiteProbe, LocalPrerequisiteProbe>();
+foreach (var definition in LocalPrerequisiteCatalog.Definitions)
+{
+    builder.Services.AddSingleton<IPrerequisiteCheck>(
+        provider => new LocalPrerequisiteCheck(
+            definition,
+            provider.GetRequiredService<ILocalPrerequisiteProbe>()));
+}
+
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddValidation();

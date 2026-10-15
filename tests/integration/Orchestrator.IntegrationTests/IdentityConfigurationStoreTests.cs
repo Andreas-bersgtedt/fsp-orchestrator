@@ -79,6 +79,7 @@ public sealed class IdentityConfigurationStoreTests
             new HostingRuntime(
                 "https://localhost:9443",
                 directory,
+                "CN=localhost",
                 DateTimeOffset.UtcNow.AddDays(1)));
 
     private static string CreateTestDirectory(string suffix)

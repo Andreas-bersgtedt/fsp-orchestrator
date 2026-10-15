@@ -34,7 +34,11 @@ public static class LoopbackHosting
                 listenOptions => listenOptions.UseHttps(certificate));
         });
 
-        return new HostingRuntime(Origin, stateDirectory.Path, certificate.NotAfter);
+        return new HostingRuntime(
+            Origin,
+            stateDirectory.Path,
+            certificate.Subject,
+            certificate.NotAfter);
     }
 
     public static void ValidateUrlOverrides(string? configuredUrls)
@@ -70,4 +74,5 @@ public static class LoopbackHosting
 public sealed record HostingRuntime(
     string Origin,
     string DataDirectory,
+    string CertificateSubject,
     DateTimeOffset CertificateExpiresAt);
