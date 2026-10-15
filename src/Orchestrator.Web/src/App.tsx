@@ -38,6 +38,10 @@ const RegisterDeployment = lazy(async () => {
   const module = await import('./deployments/RegisterDeployment.tsx')
   return { default: module.RegisterDeployment }
 })
+const DeploymentInventory = lazy(async () => {
+  const module = await import('./deployments/DeploymentInventory.tsx')
+  return { default: module.DeploymentInventory }
+})
 
 type HealthResponse = {
   status: string
@@ -79,6 +83,7 @@ export default function App({
   authentication: AuthenticationState
 }) {
   const [health, setHealth] = useState<HealthState>({ kind: 'loading' })
+  const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -183,6 +188,23 @@ export default function App({
               <RegisterDeployment
                 acquireAccessToken={authentication.acquireAccessToken}
                 apiScope={authentication.apiScope}
+                onRegistered={() =>
+                  setInventoryRefreshKey((current) => current + 1)
+                }
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
+          authentication.session.permissions.Reader ? (
+            <Suspense fallback={<Spinner label="Loading deployment inventory" />}>
+              <DeploymentInventory
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+                canRefresh={Boolean(
+                  authentication.session.permissions.Operator,
+                )}
+                refreshKey={inventoryRefreshKey}
               />
             </Suspense>
           ) : null}

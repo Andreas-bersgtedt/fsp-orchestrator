@@ -9,6 +9,22 @@ internal sealed class JobStore(
     IPersistenceValueGuard valueGuard)
     : IJobStore
 {
+    public async Task<IReadOnlyList<JobInfo>> ListForDeploymentAsync(
+        Guid deploymentId,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(
+            cancellationToken);
+        var jobs = await context.Jobs
+            .AsNoTracking()
+            .Where(job => job.DeploymentId == deploymentId)
+            .ToArrayAsync(cancellationToken);
+        return jobs
+            .OrderByDescending(job => job.UpdatedAt)
+            .Select(Map)
+            .ToArray();
+    }
+
     public async Task<JobInfo> CreateAsync(
         CreateJob request,
         CancellationToken cancellationToken)

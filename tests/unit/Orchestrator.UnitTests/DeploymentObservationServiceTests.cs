@@ -1,5 +1,6 @@
 using Fsp.Orchestrator.Application.Deployments;
 using Fsp.Orchestrator.Application.Persistence;
+using System.Collections.Concurrent;
 
 namespace Fsp.Orchestrator.UnitTests;
 
@@ -239,14 +240,15 @@ public sealed class DeploymentObservationServiceTests
 
     private sealed class TestObservationStore : IDeploymentObservationStore
     {
-        public List<DeploymentObservationAttempt> Attempts { get; } = [];
+        public ConcurrentQueue<DeploymentObservationAttempt> Attempts { get; } =
+            new();
 
         public Task RecordAttemptAsync(
             DeploymentObservationAttempt attempt,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Attempts.Add(attempt);
+            Attempts.Enqueue(attempt);
             return Task.CompletedTask;
         }
 

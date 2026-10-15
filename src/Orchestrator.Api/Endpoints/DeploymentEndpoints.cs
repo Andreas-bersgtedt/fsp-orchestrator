@@ -14,6 +14,44 @@ public static class DeploymentEndpoints
 {
     public static RouteGroupBuilder MapDeployments(this RouteGroupBuilder endpoints)
     {
+        endpoints.MapGet(
+                "/deployments",
+                async Task<Ok<DeploymentListResponse>> (
+                    IInventoryStore inventoryStore,
+                    IDeploymentObservationStore observationStore,
+                    DeploymentObservationOptions observationOptions,
+                    CancellationToken cancellationToken) =>
+                {
+                    var deployments = await inventoryStore.ListAsync(
+                        cancellationToken);
+                    var items = new List<DeploymentListItemResponse>(
+                        deployments.Count);
+                    foreach (var deployment in deployments)
+                    {
+                        var observation = await observationStore.GetStateAsync(
+                            deployment.Id,
+                            cancellationToken);
+                        items.Add(
+                            new DeploymentListItemResponse(
+                                Map(deployment),
+                                observation is null ? null : Map(observation)));
+                    }
+
+                    return TypedResults.Ok(
+                        new DeploymentListResponse(
+                            items,
+                            (long)Math.Ceiling(
+                                observationOptions.Interval.TotalSeconds * 2),
+                            DateTimeOffset.UtcNow));
+                })
+            .RequireAuthorization(OrchestratorRoles.Reader)
+            .WithName("ListDeployments")
+            .WithSummary("List registered deployments")
+            .WithDescription(
+                "Returns non-secret inventory with latest and last-successful "
+                + "observation state.")
+            .Produces<DeploymentListResponse>(StatusCodes.Status200OK);
+
         endpoints.MapPost(
                 "/deployments",
                 RegisterAsync)
@@ -72,6 +110,44 @@ public static class DeploymentEndpoints
                 "Returns the latest attempt separately from the last successful "
                 + "timestamp and values.")
             .Produces<DeploymentObservationStateResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        endpoints.MapGet(
+                "/deployments/{deploymentId:guid}/jobs",
+                async Task<Results<Ok<DeploymentJobListResponse>, NotFound>> (
+                    Guid deploymentId,
+                    IInventoryStore inventoryStore,
+                    IJobStore jobStore,
+                    CancellationToken cancellationToken) =>
+                {
+                    if (await inventoryStore.GetAsync(
+                            deploymentId,
+                            cancellationToken) is null)
+                    {
+                        return TypedResults.NotFound();
+                    }
+
+                    var jobs = await jobStore.ListForDeploymentAsync(
+                        deploymentId,
+                        cancellationToken);
+                    return TypedResults.Ok(
+                        new DeploymentJobListResponse(
+                            jobs.Select(
+                                    job => new DeploymentJobResponse(
+                                        job.Id,
+                                        job.Kind,
+                                        job.Status,
+                                        job.CreatedAt,
+                                        job.UpdatedAt,
+                                        job.Version))
+                                .ToArray()));
+                })
+            .RequireAuthorization(OrchestratorRoles.Reader)
+            .WithName("ListDeploymentJobs")
+            .WithSummary("List deployment job reports")
+            .WithDescription(
+                "Returns non-secret job status metadata for one deployment.")
+            .Produces<DeploymentJobListResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
         endpoints.MapPost(
@@ -305,6 +381,17 @@ public sealed record ObservedComponentResponse(
     string Version,
     string Status);
 
+/// <summary>Represents the registered deployment inventory.</summary>
+public sealed record DeploymentListResponse(
+    IReadOnlyList<DeploymentListItemResponse> Deployments,
+    long StaleAfterSeconds,
+    DateTimeOffset CheckedAt);
+
+/// <summary>Represents one deployment and its observation state.</summary>
+public sealed record DeploymentListItemResponse(
+    DeploymentResponse Deployment,
+    DeploymentObservationStateResponse? Observation);
+
 /// <summary>Represents latest and last-successful deployment observations.</summary>
 public sealed record DeploymentObservationStateResponse(
     Guid DeploymentId,
@@ -320,3 +407,16 @@ public sealed record DeploymentObservationAttemptResponse(
     DateTimeOffset StartedAt,
     DateTimeOffset CompletedAt,
     IReadOnlyList<ObservedComponentResponse> Values);
+
+/// <summary>Represents job reports for one deployment.</summary>
+public sealed record DeploymentJobListResponse(
+    IReadOnlyList<DeploymentJobResponse> Jobs);
+
+/// <summary>Represents non-secret job report metadata.</summary>
+public sealed record DeploymentJobResponse(
+    Guid Id,
+    string Kind,
+    JobStatus Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    long Version);
