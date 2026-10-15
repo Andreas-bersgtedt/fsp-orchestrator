@@ -74,6 +74,11 @@ builder.Services.AddSingleton<IAzureResourceDiscovery>(
     provider => new AzureResourceDiscovery(
         provider.GetRequiredService<IHttpClientFactory>()
             .CreateClient(nameof(AzureResourceDiscovery))));
+builder.Services.AddSingleton<IAzurePrerequisiteProbe>(
+    provider => new AzurePrerequisiteProbe(
+        provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(nameof(AzureResourceDiscovery)),
+        provider.GetRequiredService<IAzureTokenSessionStore>()));
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddSingleton<IFspCredentialResolver, AzureKeyVaultCredentialResolver>();
 builder.Services.AddHttpClient(nameof(FspDeploymentProbe), client =>
@@ -115,6 +120,13 @@ foreach (var definition in LocalPrerequisiteCatalog.Definitions)
         provider => new LocalPrerequisiteCheck(
             definition,
             provider.GetRequiredService<ILocalPrerequisiteProbe>()));
+}
+foreach (var definition in AzurePrerequisiteCatalog.Definitions)
+{
+    builder.Services.AddSingleton<IPrerequisiteCheck>(
+        provider => new AzurePrerequisiteCheck(
+            definition,
+            provider.GetRequiredService<IAzurePrerequisiteProbe>()));
 }
 
 builder.Services.AddOpenApi();

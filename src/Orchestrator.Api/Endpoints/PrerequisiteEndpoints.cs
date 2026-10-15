@@ -177,6 +177,8 @@ public static class PrerequisiteEndpoints
         {
             [PrerequisiteSystemInputKeys.CurrentTenantId] =
                 user.FindFirstValue("tid") ?? string.Empty,
+            [PrerequisiteSystemInputKeys.CurrentObjectId] =
+                user.FindFirstValue("oid") ?? string.Empty,
             [PrerequisiteSystemInputKeys.CurrentClientId] =
                 user.FindFirstValue("azp")
                     ?? user.FindFirstValue("appid")
@@ -259,7 +261,10 @@ public static class PrerequisiteEndpoints
             (long)definition.Timeout.TotalMilliseconds,
             (long)definition.Lifetime.TotalSeconds,
             definition.Blocking,
-            definition.Version);
+            definition.Version,
+            definition.ApplyFreshness is null
+                ? null
+                : (long)definition.ApplyFreshness.Value.TotalSeconds);
 
     private static PrerequisiteRunResponse Map(PrerequisiteRun run) =>
         new(
@@ -322,7 +327,8 @@ public sealed record PrerequisiteCheckDefinitionResponse(
     long TimeoutMilliseconds,
     long LifetimeSeconds,
     bool Blocking,
-    string Version);
+    string Version,
+    long? ApplyFreshnessSeconds);
 
 /// <summary>Input for starting an asynchronous prerequisite run.</summary>
 public sealed record StartPrerequisiteRunRequest

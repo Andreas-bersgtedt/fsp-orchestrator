@@ -24,7 +24,11 @@ public interface IAzureTokenSessionStore
 
     AzureAccessTokenSession Retrieve(ClaimsPrincipal orchestratorUser);
 
+    AzureAccessTokenSession Retrieve(string tenantId, string objectId);
+
     void Remove(ClaimsPrincipal orchestratorUser);
+
+    void Remove(string tenantId, string objectId);
 }
 
 public interface IAzureJobTokenProvider
@@ -163,6 +167,17 @@ public sealed class InMemoryAzureTokenSessionStore(TimeProvider timeProvider)
     public AzureAccessTokenSession Retrieve(ClaimsPrincipal orchestratorUser)
     {
         var (tenantId, objectId) = Identity(orchestratorUser);
+        return Retrieve(tenantId, objectId);
+    }
+
+    public AzureAccessTokenSession Retrieve(string tenantId, string objectId)
+    {
+        if (!Guid.TryParse(tenantId, out _)
+            || !Guid.TryParse(objectId, out _))
+        {
+            throw new AzureSignInRequiredException();
+        }
+
         var key = Key(tenantId, objectId);
         if (!sessions.TryGetValue(key, out var session)
             || session.ExpiresAt <= timeProvider.GetUtcNow().AddMinutes(1))
@@ -177,6 +192,11 @@ public sealed class InMemoryAzureTokenSessionStore(TimeProvider timeProvider)
     public void Remove(ClaimsPrincipal orchestratorUser)
     {
         var (tenantId, objectId) = Identity(orchestratorUser);
+        Remove(tenantId, objectId);
+    }
+
+    public void Remove(string tenantId, string objectId)
+    {
         sessions.TryRemove(Key(tenantId, objectId), out _);
     }
 
