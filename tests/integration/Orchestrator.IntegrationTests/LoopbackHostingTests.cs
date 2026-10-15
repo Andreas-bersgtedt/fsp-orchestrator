@@ -72,6 +72,18 @@ public sealed class LoopbackHostingTests
         Assert.False(readiness.IsReady);
     }
 
+    [Fact]
+    public async Task RestartHelperRemovesWaitArgumentsAfterParentExit()
+    {
+        var result = await ProcessRestartBootstrap.PrepareAsync(
+            [
+                ProcessRestartBootstrap.WaitForParentArgument,
+                int.MaxValue.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ]);
+
+        Assert.Empty(result!);
+    }
+
     private sealed class TestHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = Environments.Development;

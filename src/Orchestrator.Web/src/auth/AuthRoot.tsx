@@ -12,6 +12,7 @@ import {
 } from '@azure/msal-react'
 import { useEffect, useState } from 'react'
 import App from '../App.tsx'
+import { BootstrapAuthRoot } from './BootstrapAuthRoot.tsx'
 import type {
   AuthenticationConfiguration,
   AuthenticationState,
@@ -79,7 +80,7 @@ export function AuthRoot() {
   }
 
   if (!bootstrap.configuration.configured) {
-    return <App authentication={{ kind: 'setup-required' }} />
+    return <BootstrapAuthRoot configuration={bootstrap.configuration} />
   }
 
   return <ConfiguredAuthentication configuration={bootstrap.configuration} />

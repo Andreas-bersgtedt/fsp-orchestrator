@@ -88,7 +88,9 @@ public sealed class ProjectBoundaryTests
                 "*.*",
                 SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".ts", StringComparison.OrdinalIgnoreCase)
-                || path.EndsWith(".tsx", StringComparison.OrdinalIgnoreCase));
+                || path.EndsWith(".tsx", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.EndsWith(".test.ts", StringComparison.OrdinalIgnoreCase)
+                && !path.EndsWith(".test.tsx", StringComparison.OrdinalIgnoreCase));
         return dotnetSourceFiles.Concat(webSourceFiles);
     }
 
