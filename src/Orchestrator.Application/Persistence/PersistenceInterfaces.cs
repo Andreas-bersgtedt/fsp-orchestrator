@@ -2,6 +2,18 @@ namespace Fsp.Orchestrator.Application.Persistence;
 
 public interface IInventoryStore
 {
+    Task<DeploymentInventoryItem?> GetAsync(
+        Guid deploymentId,
+        CancellationToken cancellationToken);
+
+    Task<bool> ExistsByManagerEndpointAsync(
+        Uri managerEndpoint,
+        CancellationToken cancellationToken);
+
+    Task<DeploymentInventoryItem> RegisterAsync(
+        RegisterDeployment request,
+        CancellationToken cancellationToken);
+
     Task<DeploymentInventoryItem> UpsertAsync(
         UpsertDeployment request,
         CancellationToken cancellationToken);

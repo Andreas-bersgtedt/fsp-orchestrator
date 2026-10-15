@@ -6,6 +6,8 @@ public sealed record DeploymentInventoryItem(
     string Topology,
     Uri ManagerEndpoint,
     string? AzureResourceId,
+    string? CredentialKind,
+    Uri? CredentialReference,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     long Version);
@@ -75,3 +77,6 @@ public enum JobStatus
     Failed,
     Cancelled,
 }
+
+public sealed class DuplicateManagerEndpointException()
+    : Exception("The Manager endpoint is already registered.");

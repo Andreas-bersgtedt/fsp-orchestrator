@@ -88,6 +88,14 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CredentialKind")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CredentialReference")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ManagerEndpoint")
                         .IsRequired()
                         .HasMaxLength(2048)

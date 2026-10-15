@@ -169,6 +169,48 @@ public sealed class PersistenceTests
         Assert.Equal("Before backup", restored.Name);
     }
 
+    [Fact]
+    public async Task RegistrationPersistsReferenceAndVersionsAtomically()
+    {
+        await using var fixture = await PersistenceFixture.CreateAsync();
+        var endpoint = new Uri("https://manager.example.test/");
+        var credentialReference = new Uri(
+            "https://example.vault.azure.net/secrets/manager-token");
+        var request = new RegisterDeployment(
+            Guid.NewGuid(),
+            "Enterprise",
+            "Enterprise",
+            endpoint,
+            "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/fsp",
+            "Bearer",
+            credentialReference,
+            [
+                new ObservedComponent("manager", "3.1.0", "healthy"),
+                new ObservedComponent("agent-a", "3.1.0", "observed"),
+            ],
+            DateTimeOffset.UtcNow);
+
+        var deployment = await fixture.Inventory.RegisterAsync(
+            request,
+            CancellationToken.None);
+
+        Assert.Equal(credentialReference, deployment.CredentialReference);
+        Assert.True(
+            await fixture.Inventory.ExistsByManagerEndpointAsync(
+                endpoint,
+                CancellationToken.None));
+        await using var context = await fixture.ContextFactory.CreateDbContextAsync();
+        var observations = await context.Observations
+            .Where(item => item.DeploymentId == request.Id)
+            .ToArrayAsync();
+        Assert.Equal(2, observations.Length);
+        await Assert.ThrowsAsync<DuplicateManagerEndpointException>(
+            () => fixture.Inventory.RegisterAsync(
+                request with { Id = Guid.NewGuid() },
+                CancellationToken.None));
+        Assert.Single(await context.Deployments.ToArrayAsync());
+    }
+
     private sealed class PersistenceFixture : IAsyncDisposable
     {
         private readonly ServiceProvider provider;

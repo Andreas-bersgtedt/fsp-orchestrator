@@ -5,6 +5,8 @@ using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
 using Fsp.Orchestrator.Application.Prerequisites;
+using Fsp.Orchestrator.Application.Deployments;
+using Fsp.Orchestrator.Infrastructure.Deployments;
 using Fsp.Orchestrator.Infrastructure.Persistence;
 
 var applicationArgs = await ProcessRestartBootstrap.PrepareAsync(args);
@@ -41,6 +43,25 @@ builder.Services.AddSingleton<IPrerequisiteRunCoordinator, PrerequisiteRunCoordi
 builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
+builder.Services.AddSingleton<IFspCredentialResolver, AzureKeyVaultCredentialResolver>();
+builder.Services.AddHttpClient(nameof(FspDeploymentProbe), client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("FspOrchestrator/1.0");
+}).ConfigurePrimaryHttpMessageHandler(
+    () => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        ConnectTimeout = TimeSpan.FromSeconds(10),
+    });
+builder.Services.AddSingleton<IFspDeploymentProbe>(
+    provider => new FspDeploymentProbe(
+        provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(nameof(FspDeploymentProbe)),
+        provider.GetRequiredService<IFspCredentialResolver>()));
+builder.Services.AddSingleton<
+    IDeploymentRegistrationService,
+    DeploymentRegistrationService>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddHttpClient(nameof(LocalPrerequisiteProbe));
 builder.Services.AddSingleton<ILocalPrerequisiteProbe, LocalPrerequisiteProbe>();
@@ -86,6 +107,7 @@ api.MapAuthentication();
 api.MapEntraRegistrations();
 api.MapDatabase();
 api.MapPrerequisites();
+api.MapDeployments();
 app.MapBootstrap();
 api.MapMethods(
         "/{**path}",

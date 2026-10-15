@@ -33,6 +33,8 @@ public sealed class OrchestratorDbContext(
                 entity.Property(item => item.Topology).HasMaxLength(50);
                 entity.Property(item => item.ManagerEndpoint).HasMaxLength(2048);
                 entity.Property(item => item.AzureResourceId).HasMaxLength(2048);
+                entity.Property(item => item.CredentialKind).HasMaxLength(30);
+                entity.Property(item => item.CredentialReference).HasMaxLength(2048);
                 entity.Property(item => item.Version).IsConcurrencyToken();
                 entity.HasIndex(item => item.ManagerEndpoint).IsUnique();
             });

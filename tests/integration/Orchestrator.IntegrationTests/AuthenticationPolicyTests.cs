@@ -4,7 +4,9 @@ using System.Security.Cryptography.X509Certificates;
 using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
+using Fsp.Orchestrator.Application.Deployments;
 using Fsp.Orchestrator.Application.Identity;
+using Fsp.Orchestrator.Application.Persistence;
 using Fsp.Orchestrator.Application.Prerequisites;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -312,6 +314,45 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task OperatorCanRegisterDeploymentAndReaderCanRetrieveIt()
+    {
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.Reader},{OrchestratorRoles.Operator}");
+        var response = await client.PostAsJsonAsync(
+            "/api/deployments",
+            new RegisterDeploymentRequest
+            {
+                Name = "Test Lite",
+                ManagerEndpoint = "https://lite.example.test",
+                CredentialKind = FspCredentialKind.None,
+            });
+        var registration = await response.Content
+            .ReadFromJsonAsync<DeploymentRegistrationResponse>();
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("Lite", registration!.Deployment.Topology);
+        Assert.Equal("3.1.0", Assert.Single(registration.Components).Version);
+        var get = await client.GetAsync(response.Headers.Location);
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReaderCannotRegisterDeployment()
+    {
+        using var client = CreateAuthenticatedClient(OrchestratorRoles.Reader);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/deployments",
+            new RegisterDeploymentRequest
+            {
+                Name = "Forbidden",
+                ManagerEndpoint = "https://lite.example.test",
+            });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RegistrationValidationRequiresSecurityAdmin()
     {
         using var reader = CreateAuthenticatedClient(OrchestratorRoles.Reader);
@@ -479,6 +520,10 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                 services =>
                 {
                     services.RemoveAll<IPrerequisiteCheck>();
+                    services.RemoveAll<IDeploymentRegistrationService>();
+                    services.AddSingleton<
+                        IDeploymentRegistrationService,
+                        TestDeploymentRegistrationService>();
                     services.AddAuthentication(
                             options =>
                             {
@@ -493,6 +538,36 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
                             TestAuthenticationHandler.Scheme,
                             _ => { });
                 });
+        }
+    }
+
+    private sealed class TestDeploymentRegistrationService(
+        IInventoryStore inventoryStore,
+        TimeProvider timeProvider)
+        : IDeploymentRegistrationService
+    {
+        public async Task<DeploymentRegistrationResult> RegisterAsync(
+            DeploymentRegistrationRequest request,
+            CancellationToken cancellationToken)
+        {
+            var components = new[]
+            {
+                new ObservedComponent("lite", "3.1.0", "healthy"),
+            };
+            var now = timeProvider.GetUtcNow();
+            var deployment = await inventoryStore.RegisterAsync(
+                new RegisterDeployment(
+                    request.Id,
+                    request.Name,
+                    FspTopology.Lite.ToString(),
+                    request.ManagerEndpoint,
+                    request.AzureResourceId,
+                    null,
+                    null,
+                    components,
+                    now),
+                cancellationToken);
+            return new DeploymentRegistrationResult(deployment, components);
         }
     }
 }
