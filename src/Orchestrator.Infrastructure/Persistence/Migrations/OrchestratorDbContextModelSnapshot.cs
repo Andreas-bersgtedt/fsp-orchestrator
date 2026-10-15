@@ -217,10 +217,48 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.ToTable("JobSteps", (string)null);
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.ObservationAttemptEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CompletedAtUnixMilliseconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("DeploymentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeploymentId", "CompletedAtUnixMilliseconds");
+
+                    b.ToTable("ObservationAttempts", (string)null);
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.ObservationEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AttemptId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Component")
@@ -245,6 +283,8 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AttemptId");
 
                     b.HasIndex("DeploymentId", "ObservedAt");
 
@@ -384,13 +424,31 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.Navigation("Job");
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.ObservationAttemptEntity", b =>
+                {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", "Deployment")
+                        .WithMany()
+                        .HasForeignKey("DeploymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Deployment");
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.ObservationEntity", b =>
                 {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.ObservationAttemptEntity", "Attempt")
+                        .WithMany("Values")
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", "Deployment")
                         .WithMany("Observations")
                         .HasForeignKey("DeploymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Attempt");
 
                     b.Navigation("Deployment");
                 });
@@ -416,6 +474,11 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>
                 {
                     b.Navigation("Steps");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.ObservationAttemptEntity", b =>
+                {
+                    b.Navigation("Values");
                 });
 
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteRunEntity", b =>

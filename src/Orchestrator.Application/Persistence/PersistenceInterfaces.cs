@@ -2,6 +2,9 @@ namespace Fsp.Orchestrator.Application.Persistence;
 
 public interface IInventoryStore
 {
+    Task<IReadOnlyList<DeploymentInventoryItem>> ListAsync(
+        CancellationToken cancellationToken);
+
     Task<DeploymentInventoryItem?> GetAsync(
         Guid deploymentId,
         CancellationToken cancellationToken);

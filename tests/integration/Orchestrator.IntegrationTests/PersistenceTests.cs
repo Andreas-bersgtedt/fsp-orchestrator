@@ -1,4 +1,5 @@
 using System.Text;
+using Fsp.Orchestrator.Application.Deployments;
 using Fsp.Orchestrator.Application.Persistence;
 using Fsp.Orchestrator.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
@@ -211,6 +212,51 @@ public sealed class PersistenceTests
         Assert.Single(await context.Deployments.ToArrayAsync());
     }
 
+    [Fact]
+    public async Task FailedAttemptRetainsLastSuccessfulObservationTimestamp()
+    {
+        await using var fixture = await PersistenceFixture.CreateAsync();
+        var deployment = await fixture.Inventory.UpsertAsync(
+            new UpsertDeployment(
+                Guid.NewGuid(),
+                "Observed",
+                "Lite",
+                new Uri("https://lite.example.test"),
+                null),
+            CancellationToken.None);
+        var successfulAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        await fixture.Observations.RecordAttemptAsync(
+            new DeploymentObservationAttempt(
+                Guid.NewGuid(),
+                deployment.Id,
+                DeploymentObservationStatus.Healthy,
+                "observation.healthy",
+                successfulAt.AddSeconds(-1),
+                successfulAt,
+                [new ObservedComponent("health", "ok", "current")]),
+            CancellationToken.None);
+        await fixture.Observations.RecordAttemptAsync(
+            new DeploymentObservationAttempt(
+                Guid.NewGuid(),
+                deployment.Id,
+                DeploymentObservationStatus.Unreachable,
+                "observation.unreachable",
+                DateTimeOffset.UtcNow.AddSeconds(-1),
+                DateTimeOffset.UtcNow,
+                []),
+            CancellationToken.None);
+
+        var state = await fixture.Observations.GetStateAsync(
+            deployment.Id,
+            CancellationToken.None);
+
+        Assert.Equal(
+            DeploymentObservationStatus.Unreachable,
+            state!.LatestAttempt!.Status);
+        Assert.Equal(successfulAt, state.LastSuccessfulAt);
+        Assert.Equal("ok", Assert.Single(state.LastSuccessfulValues).Version);
+    }
+
     private sealed class PersistenceFixture : IAsyncDisposable
     {
         private readonly ServiceProvider provider;
@@ -229,6 +275,9 @@ public sealed class PersistenceTests
             provider.GetRequiredService<IInventoryStore>();
 
         public IJobStore Jobs => provider.GetRequiredService<IJobStore>();
+
+        public IDeploymentObservationStore Observations =>
+            provider.GetRequiredService<IDeploymentObservationStore>();
 
         public IAuditMetadataStore Audit =>
             provider.GetRequiredService<IAuditMetadataStore>();

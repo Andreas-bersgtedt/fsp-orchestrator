@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Authentication;
 using System.Text;
 using Fsp.Orchestrator.Application.Deployments;
+using Fsp.Orchestrator.Application.Persistence;
 using Fsp.Orchestrator.Infrastructure.Deployments;
 
 namespace Fsp.Orchestrator.IntegrationTests;
@@ -144,6 +145,73 @@ public sealed class FspDeploymentProbeTests
             "sensitive",
             exception.Message,
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task EnterpriseObservationCollectsHealthFleetQueueAndVersions()
+    {
+        var probe = Probe(
+            request => request.RequestUri!.AbsolutePath switch
+            {
+                "/healthz" => Json("""{"status":"ok"}"""),
+                "/readyz" => Json("""{"status":"ready"}"""),
+                "/openapi.json" => Json(OpenApi(
+                    "Fabric Shortcut Proxy: Manager",
+                    "\"/agents\":{},\"/healthz\":{},\"/readyz\":{}")),
+                "/agents" => Json(
+                    """
+                    {
+                      "agents": [
+                        {
+                          "agent_id": "agent-a",
+                          "server_version": "3.1.0"
+                        }
+                      ],
+                      "dead": [{}]
+                    }
+                    """),
+                "/control/work-queue" => Json(
+                    """
+                    {
+                      "requests": [{}, {}],
+                      "tasks": [{}],
+                      "scheduler": "running"
+                    }
+                    """),
+                _ => new HttpResponseMessage(HttpStatusCode.NotFound),
+            },
+            new TestCredentialResolver("safe-test-token"));
+        var deployment = new DeploymentInventoryItem(
+            Guid.NewGuid(),
+            "Enterprise",
+            "Enterprise",
+            new Uri("https://manager.example.test"),
+            null,
+            "Bearer",
+            new Uri("https://example.vault.azure.net/secrets/manager"),
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            1);
+
+        var snapshot = await probe.ObserveAsync(
+            deployment,
+            CancellationToken.None);
+
+        Assert.Contains(
+            snapshot.Values,
+            value => value.Name == "health" && value.Version == "ok");
+        Assert.Contains(
+            snapshot.Values,
+            value => value.Name == "fleet"
+                && value.Version == "active=1;dead=1");
+        Assert.Contains(
+            snapshot.Values,
+            value => value.Name == "queue"
+                && value.Version == "requests=2;tasks=1");
+        Assert.Contains(
+            snapshot.Values,
+            value => value.Name == "agent-a"
+                && value.Version == "3.1.0");
     }
 
     private static FspDeploymentProbe Probe(

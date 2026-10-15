@@ -51,6 +51,57 @@ public static class DeploymentEndpoints
             .Produces<DeploymentResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
+        endpoints.MapGet(
+                "/deployments/{deploymentId:guid}/observations/current",
+                async Task<Results<Ok<DeploymentObservationStateResponse>, NotFound>> (
+                    Guid deploymentId,
+                    IDeploymentObservationStore observationStore,
+                    CancellationToken cancellationToken) =>
+                {
+                    var state = await observationStore.GetStateAsync(
+                        deploymentId,
+                        cancellationToken);
+                    return state is null
+                        ? TypedResults.NotFound()
+                        : TypedResults.Ok(Map(state));
+                })
+            .RequireAuthorization(OrchestratorRoles.Reader)
+            .WithName("GetDeploymentObservationState")
+            .WithSummary("Get current deployment observation state")
+            .WithDescription(
+                "Returns the latest attempt separately from the last successful "
+                + "timestamp and values.")
+            .Produces<DeploymentObservationStateResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        endpoints.MapPost(
+                "/deployments/{deploymentId:guid}/observations",
+                async Task<Results<Ok<DeploymentObservationStateResponse>, NotFound>> (
+                    Guid deploymentId,
+                    IDeploymentObservationService observationService,
+                    CancellationToken cancellationToken) =>
+                {
+                    try
+                    {
+                        var state = await observationService.PollAsync(
+                            deploymentId,
+                            cancellationToken);
+                        return TypedResults.Ok(Map(state));
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        return TypedResults.NotFound();
+                    }
+                })
+            .RequireAuthorization(OrchestratorRoles.Operator)
+            .WithName("RefreshDeploymentObservation")
+            .WithSummary("Refresh deployment observations")
+            .WithDescription(
+                "Runs a bounded observation attempt without replacing the last "
+                + "successful snapshot on failure.")
+            .Produces<DeploymentObservationStateResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
         return endpoints;
     }
 
@@ -180,6 +231,25 @@ public static class DeploymentEndpoints
             deployment.CreatedAt,
             deployment.UpdatedAt,
             deployment.Version);
+
+    private static DeploymentObservationStateResponse Map(
+        DeploymentObservationState state) =>
+        new(
+            state.DeploymentId,
+            state.LatestAttempt is null
+                ? null
+                : new DeploymentObservationAttemptResponse(
+                    state.LatestAttempt.Id,
+                    state.LatestAttempt.Status,
+                    state.LatestAttempt.Code,
+                    state.LatestAttempt.StartedAt,
+                    state.LatestAttempt.CompletedAt,
+                    state.LatestAttempt.Values.Select(Map).ToArray()),
+            state.LastSuccessfulAt,
+            state.LastSuccessfulValues.Select(Map).ToArray());
+
+    private static ObservedComponentResponse Map(ObservedComponent value) =>
+        new(value.Name, value.Version, value.Status);
 }
 
 /// <summary>Payload for registering an existing FSP deployment.</summary>
@@ -234,3 +304,19 @@ public sealed record ObservedComponentResponse(
     string Name,
     string Version,
     string Status);
+
+/// <summary>Represents latest and last-successful deployment observations.</summary>
+public sealed record DeploymentObservationStateResponse(
+    Guid DeploymentId,
+    DeploymentObservationAttemptResponse? LatestAttempt,
+    DateTimeOffset? LastSuccessfulAt,
+    IReadOnlyList<ObservedComponentResponse> LastSuccessfulValues);
+
+/// <summary>Represents one atomic deployment observation attempt.</summary>
+public sealed record DeploymentObservationAttemptResponse(
+    Guid Id,
+    DeploymentObservationStatus Status,
+    string Code,
+    DateTimeOffset StartedAt,
+    DateTimeOffset CompletedAt,
+    IReadOnlyList<ObservedComponentResponse> Values);

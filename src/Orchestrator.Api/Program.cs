@@ -35,6 +35,15 @@ builder.Services.AddOrchestratorPersistence(
     Path.Combine(hostingRuntime.DataDirectory, "orchestrator.db"));
 builder.Services.AddHostedService<DatabaseMigrationHostedService>();
 builder.Services.AddSingleton(TimeProvider.System);
+var observationOptions = new DeploymentObservationOptions(
+    builder.Configuration.GetValue("Observations:Enabled", true),
+    TimeSpan.FromSeconds(
+        builder.Configuration.GetValue("Observations:IntervalSeconds", 60)),
+    builder.Configuration.GetValue("Observations:MaximumConcurrency", 4),
+    builder.Configuration.GetValue("Observations:MaximumAttempts", 3),
+    TimeSpan.FromMilliseconds(
+        builder.Configuration.GetValue("Observations:InitialBackoffMilliseconds", 1000)));
+builder.Services.AddSingleton(observationOptions);
 builder.Services.AddSingleton<IPrerequisiteEvidenceSanitizer, PrerequisiteEvidenceSanitizer>();
 builder.Services.AddSingleton<IPrerequisiteErrorReporter, PrerequisiteErrorReporter>();
 builder.Services.AddSingleton<IPrerequisiteEngine, PrerequisiteEngine>();
@@ -54,14 +63,22 @@ builder.Services.AddHttpClient(nameof(FspDeploymentProbe), client =>
         AllowAutoRedirect = false,
         ConnectTimeout = TimeSpan.FromSeconds(10),
     });
-builder.Services.AddSingleton<IFspDeploymentProbe>(
+builder.Services.AddSingleton(
     provider => new FspDeploymentProbe(
         provider.GetRequiredService<IHttpClientFactory>()
             .CreateClient(nameof(FspDeploymentProbe)),
         provider.GetRequiredService<IFspCredentialResolver>()));
+builder.Services.AddSingleton<IFspDeploymentProbe>(
+    provider => provider.GetRequiredService<FspDeploymentProbe>());
+builder.Services.AddSingleton<IFspObservationProbe>(
+    provider => provider.GetRequiredService<FspDeploymentProbe>());
 builder.Services.AddSingleton<
     IDeploymentRegistrationService,
     DeploymentRegistrationService>();
+builder.Services.AddSingleton<
+    IDeploymentObservationService,
+    DeploymentObservationService>();
+builder.Services.AddHostedService<DeploymentObservationHostedService>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddHttpClient(nameof(LocalPrerequisiteProbe));
 builder.Services.AddSingleton<ILocalPrerequisiteProbe, LocalPrerequisiteProbe>();
