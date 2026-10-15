@@ -19,6 +19,7 @@ $installDirectory = Join-Path $env:ProgramFiles 'FSP Orchestrator'
 $dataDirectory = Join-Path $env:ProgramData 'FspOrchestrator'
 $sentinel = Join-Path $dataDirectory 'installer-test-sentinel.txt'
 $logDirectory = Join-Path $env:RUNNER_TEMP 'fsp-orchestrator-installer'
+$installedMsi = $null
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 
 function Invoke-Msi {
@@ -61,26 +62,31 @@ function Assert-ServiceRunning {
 
 function Assert-HttpsReady {
     $deadline = [DateTimeOffset]::UtcNow.AddSeconds(45)
+    $lastError = $null
     do {
         try {
             $response = Invoke-WebRequest `
                 -Uri 'https://localhost:9443/api/health' `
                 -UseBasicParsing `
+                -NoProxy `
                 -TimeoutSec 5
             if ($response.StatusCode -eq 200) {
                 return
             }
         }
         catch {
+            $lastError = $_
             Start-Sleep -Seconds 2
         }
     } while ([DateTimeOffset]::UtcNow -lt $deadline)
 
-    throw 'The installed HTTPS service did not become healthy.'
+    $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    throw "The installed HTTPS service did not become healthy. Service=$($service.Status); LastError=$($lastError.Exception.Message)"
 }
 
 try {
     Invoke-Msi install $BaselineMsi
+    $installedMsi = $BaselineMsi
     Assert-ServiceRunning
     Assert-HttpsReady
 
@@ -100,6 +106,7 @@ try {
     New-Item -ItemType Directory -Path $dataDirectory -Force | Out-Null
     Set-Content -Path $sentinel -Value 'preserve-on-upgrade'
     Invoke-Msi install $UpgradeMsi
+    $installedMsi = $UpgradeMsi
     Assert-ServiceRunning
     Assert-HttpsReady
     if (-not (Test-Path $sentinel)) {
@@ -107,6 +114,7 @@ try {
     }
 
     Invoke-Msi uninstall $UpgradeMsi
+    $installedMsi = $null
     if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
         throw 'Uninstall did not remove the Windows Service.'
     }
@@ -119,14 +127,21 @@ try {
     }
 
     Invoke-Msi install $UpgradeMsi
+    $installedMsi = $UpgradeMsi
     Assert-ServiceRunning
     Invoke-Msi uninstall $UpgradeMsi -Properties @('REMOVELOCALDATA=1')
+    $installedMsi = $null
     if (Test-Path $dataDirectory) {
         throw 'REMOVELOCALDATA=1 did not remove local metadata.'
     }
 }
 finally {
-    if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-        Invoke-Msi uninstall $UpgradeMsi -Properties @('REMOVELOCALDATA=1')
+    if ($null -ne $installedMsi) {
+        try {
+            Invoke-Msi uninstall $installedMsi -Properties @('REMOVELOCALDATA=1')
+        }
+        catch {
+            Write-Warning "Installer cleanup failed: $($_.Exception.Message)"
+        }
     }
 }
