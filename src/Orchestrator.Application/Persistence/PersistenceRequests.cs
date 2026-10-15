@@ -5,7 +5,25 @@ public sealed record UpsertDeployment(
     string Name,
     string Topology,
     Uri ManagerEndpoint,
-    string? AzureResourceId);
+    string? AzureResourceId,
+    string? CredentialKind = null,
+    Uri? CredentialReference = null);
+
+public sealed record RegisterDeployment(
+    Guid Id,
+    string Name,
+    string Topology,
+    Uri ManagerEndpoint,
+    string? AzureResourceId,
+    string? CredentialKind,
+    Uri? CredentialReference,
+    IReadOnlyList<ObservedComponent> Components,
+    DateTimeOffset ObservedAt);
+
+public sealed record ObservedComponent(
+    string Name,
+    string Version,
+    string Status);
 
 public sealed record RecordObservation(
     Guid DeploymentId,

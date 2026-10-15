@@ -178,6 +178,12 @@ Protected operations use the typed
 dependency ordering, bounded concurrency, timeout/cancellation, input
 fingerprints, expiry, and blocking apply gates.
 
+Existing Lite and Enterprise deployments are added through the
+[registration probe](./docs/architecture/deployment-registration.md). The
+probe checks HTTPS health, readiness, the FSP 3.1.0 OpenAPI identity, topology,
+and Enterprise credentials before one SQLite transaction creates inventory and
+component-version observations.
+
 Build, signing, certificate lifecycle, repair, upgrade, and removal behavior
 for the WiX package are documented in the
 [Windows installer guide](./docs/setup/windows-installer.md).

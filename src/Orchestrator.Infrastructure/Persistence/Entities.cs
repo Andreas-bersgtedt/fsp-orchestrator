@@ -12,6 +12,10 @@ internal sealed class DeploymentEntity
 
     public string? AzureResourceId { get; set; }
 
+    public string? CredentialKind { get; set; }
+
+    public string? CredentialReference { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset UpdatedAt { get; set; }

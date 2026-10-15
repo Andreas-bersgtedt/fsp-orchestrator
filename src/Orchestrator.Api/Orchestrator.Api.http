@@ -145,3 +145,22 @@ Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
 ### Load the hosted SPA
 GET {{baseUrl}}/
 Accept: text/html
+
+### Register an existing FSP deployment
+POST {{baseUrl}}/api/deployments
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Production FSP",
+  "managerEndpoint": "https://fsp.example.com",
+  "azureResourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/fsp/providers/Microsoft.ContainerService/managedClusters/fsp",
+  "credentialKind": "Bearer",
+  "credentialReference": "https://example.vault.azure.net/secrets/fsp-manager-token"
+}
+
+### Get a registered deployment
+GET {{baseUrl}}/api/deployments/{{deploymentId}}
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}

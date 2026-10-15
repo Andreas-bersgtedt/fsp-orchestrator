@@ -34,6 +34,10 @@ const PrerequisitesPage = lazy(async () => {
   const module = await import('./prerequisites/PrerequisitesPage.tsx')
   return { default: module.PrerequisitesPage }
 })
+const RegisterDeployment = lazy(async () => {
+  const module = await import('./deployments/RegisterDeployment.tsx')
+  return { default: module.RegisterDeployment }
+})
 
 type HealthResponse = {
   status: string
@@ -174,6 +178,16 @@ export default function App({
           ) : null}
 
           {authentication.kind === 'signed-in' &&
+          authentication.session.permissions.Operator ? (
+            <Suspense fallback={<Spinner label="Loading deployment registration" />}>
+              <RegisterDeployment
+                acquireAccessToken={authentication.acquireAccessToken}
+                apiScope={authentication.apiScope}
+              />
+            </Suspense>
+          ) : null}
+
+          {authentication.kind === 'signed-in' &&
           (authentication.session.permissions.Reader ||
             authentication.session.permissions.SecurityAdmin) ? (
             <Suspense fallback={<Spinner label="Loading database diagnostics" />}>
@@ -210,12 +224,18 @@ export default function App({
                     <CardFooter>
                       <Button
                         appearance="primary"
-                        disabled={!allowed || workflow.title !== 'Run prerequisites'}
-                        onClick={() =>
-                          document
-                            .getElementById('prerequisites')
-                            ?.scrollIntoView({ behavior: 'smooth' })
+                        disabled={
+                          !allowed || workflow.title === 'Deploy to Azure'
                         }
+                        onClick={() => {
+                          const target =
+                            workflow.title === 'Run prerequisites'
+                              ? 'prerequisites'
+                              : 'register-deployment'
+                          document
+                            .getElementById(target)
+                            ?.scrollIntoView({ behavior: 'smooth' })
+                        }}
                       >
                         {workflow.action}
                       </Button>
