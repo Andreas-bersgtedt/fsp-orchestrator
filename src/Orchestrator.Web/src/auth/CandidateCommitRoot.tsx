@@ -42,7 +42,7 @@ export function CandidateCommitRoot({
           throw new Error('Candidate API authentication did not return an access token.')
         }
 
-        const response = await fetch('/api/bootstrap/identity/commit', {
+        const response = await fetch('/api/identity/registrations/apply', {
           method: 'POST',
           headers: {
             Accept: 'application/json',

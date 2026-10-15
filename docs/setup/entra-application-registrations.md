@@ -72,3 +72,17 @@ Discovery and validation never display credential values, Graph access tokens,
 Orchestrator access tokens, or authorization headers. Microsoft Graph tokens
 are sent only to `https://graph.microsoft.com` and are never accepted as
 Orchestrator API tokens.
+
+## Applying a validated pair
+
+The active SPA/API IDs are not written to frontend `.env` files. The service
+stores public identity settings in the ACL-protected
+`orchestrator.identity.json` file under the Orchestrator data directory. The
+SPA reads those public values from `/api/auth/config`, so the SPA and API always
+use the same committed environment configuration.
+
+When the selected pair matches the active IDs, the setup page shows **Active
+SPA/API configuration**. A different valid pair exposes **Apply registration
+pair and restart**. Apply requires a fresh token minted for the candidate API,
+atomically replaces the public configuration, and restarts the process or
+Windows Service. Restart scheduling failure restores the previous file.

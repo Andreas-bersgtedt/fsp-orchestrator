@@ -75,7 +75,7 @@ public sealed class BootstrapEndpointTests : IAsyncLifetime, IDisposable
         using var client = factory!.CreateClient();
 
         var response = await client.PostAsJsonAsync(
-            "/api/bootstrap/identity/commit",
+            "/api/identity/registrations/apply",
             ValidCommitRequest());
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -94,7 +94,7 @@ public sealed class BootstrapEndpointTests : IAsyncLifetime, IDisposable
             new AuthenticationHeaderValue("Bearer", "candidate-api-token");
 
         var response = await client.PostAsJsonAsync(
-            "/api/bootstrap/identity/commit",
+            "/api/identity/registrations/apply",
             ValidCommitRequest());
         var result =
             await response.Content.ReadFromJsonAsync<BootstrapCommitResponse>();
@@ -147,7 +147,7 @@ public sealed class BootstrapEndpointTests : IAsyncLifetime, IDisposable
             new AuthenticationHeaderValue("Bearer", "candidate-api-token");
 
         var response = await client.PostAsJsonAsync(
-            "/api/bootstrap/identity/commit",
+            "/api/identity/registrations/apply",
             ValidCommitRequest());
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);

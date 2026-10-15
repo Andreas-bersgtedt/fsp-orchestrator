@@ -33,6 +33,13 @@ export type OperatorSession = {
   permissions: Record<string, boolean>
 }
 
+export type ActiveIdentityConfiguration = {
+  tenantId: string
+  spaClientId: string
+  apiClientId: string
+  scopeName: string
+}
+
 export type AuthenticationState =
   | { kind: 'loading' }
   | { kind: 'setup-required' }
@@ -52,6 +59,7 @@ export type AuthenticationState =
       kind: 'signed-in'
       session: OperatorSession
       apiScope: string
+      identityConfiguration: ActiveIdentityConfiguration
       acquireAccessToken: (scopes: string[]) => Promise<string>
       signOut: () => Promise<void>
     }

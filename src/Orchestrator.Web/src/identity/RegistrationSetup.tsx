@@ -14,12 +14,17 @@ import {
   Title2,
 } from '@fluentui/react-components'
 import { useMemo, useState } from 'react'
-import type { OperatorSession } from '../auth/authTypes.ts'
+import type {
+  ActiveIdentityConfiguration,
+  OperatorSession,
+} from '../auth/authTypes.ts'
+import { beginCandidateConfiguration } from '../auth/candidateSetup.ts'
 import {
   discoverOwnedApplications,
   servicePrincipalExists,
   type OwnedEntraApplication,
 } from './graphDiscovery.ts'
+import type { CreatedRegistrationPair } from './graphRegistrationCreation.ts'
 
 type ValidationCheck = {
   code: string
@@ -36,16 +41,20 @@ type ValidationResponse = {
 export function RegistrationSetup({
   acquireAccessToken,
   apiScope,
+  identityConfiguration,
   session,
 }: {
   acquireAccessToken: (scopes: string[]) => Promise<string>
   apiScope: string
+  identityConfiguration: ActiveIdentityConfiguration
   session: OperatorSession
 }) {
   const [applications, setApplications] = useState<OwnedEntraApplication[]>([])
   const [spaAppId, setSpaAppId] = useState('')
   const [apiAppId, setApiAppId] = useState('')
   const [validation, setValidation] = useState<ValidationResponse>()
+  const [validatedPair, setValidatedPair] =
+    useState<CreatedRegistrationPair>()
   const [status, setStatus] = useState<
     'idle' | 'discovering' | 'validating'
   >('idle')
@@ -63,6 +72,7 @@ export function RegistrationSetup({
     setStatus('discovering')
     setError(undefined)
     setValidation(undefined)
+    setValidatedPair(undefined)
     try {
       const token = await acquireAccessToken(['Application.Read.All'])
       const discovered = await discoverOwnedApplications(token)
@@ -91,6 +101,13 @@ export function RegistrationSetup({
           servicePrincipalExists(api.appId, graphToken),
           acquireAccessToken([apiScope]),
         ])
+      const pair: CreatedRegistrationPair = {
+        spa,
+        api,
+        spaServicePrincipalExists: spaServicePrincipal,
+        apiServicePrincipalExists: apiServicePrincipal,
+        signedInUserRoles: session.roles,
+      }
       const response = await fetch('/api/identity/registrations/validate', {
         method: 'POST',
         headers: {
@@ -105,19 +122,39 @@ export function RegistrationSetup({
           api,
           spaServicePrincipalExists: spaServicePrincipal,
           apiServicePrincipalExists: apiServicePrincipal,
-          signedInUserRoles: session.roles,
+          signedInUserRoles: pair.signedInUserRoles,
         }),
       })
       if (!response.ok) {
         throw new Error(`Registration validation returned ${response.status}.`)
       }
-      setValidation((await response.json()) as ValidationResponse)
+      const result = (await response.json()) as ValidationResponse
+      setValidation(result)
+      setValidatedPair(result.passed ? pair : undefined)
     } catch (validationError) {
       setError(errorMessage(validationError))
     } finally {
       setStatus('idle')
     }
   }
+
+  async function apply() {
+    if (!validatedPair) {
+      return
+    }
+
+    await beginCandidateConfiguration({
+      tenantId: session.tenantId,
+      spaClientId: validatedPair.spa.appId,
+      apiClientId: validatedPair.api.appId,
+      apiScope: `api://${validatedPair.api.appId}/orchestrator.access_as_user`,
+      pair: validatedPair,
+    })
+  }
+
+  const selectedPairIsActive =
+    spa?.appId === identityConfiguration.spaClientId &&
+    api?.appId === identityConfiguration.apiClientId
 
   return (
     <section className="registration-setup" aria-labelledby="registration-heading">
@@ -198,6 +235,11 @@ export function RegistrationSetup({
             >
               Validate registrations
             </Button>
+            {selectedPairIsActive ? (
+              <Badge appearance="filled" color="success">
+                Active SPA/API configuration
+              </Badge>
+            ) : null}
           </CardFooter>
         </Card>
       ) : null}
@@ -232,6 +274,12 @@ export function RegistrationSetup({
             </Card>
           ))}
         </div>
+      ) : null}
+
+      {validatedPair && !selectedPairIsActive ? (
+        <Button appearance="primary" onClick={() => void apply()}>
+          Apply registration pair and restart
+        </Button>
       ) : null}
     </section>
   )

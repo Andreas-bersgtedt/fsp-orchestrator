@@ -147,6 +147,7 @@ export default function App({
               <RegistrationSetup
                 acquireAccessToken={authentication.acquireAccessToken}
                 apiScope={authentication.apiScope}
+                identityConfiguration={authentication.identityConfiguration}
                 session={authentication.session}
               />
             </Suspense>
