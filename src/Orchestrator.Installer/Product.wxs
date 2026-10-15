@@ -1,0 +1,120 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+    Name="FSP Orchestrator"
+    Manufacturer="FSP Orchestrator"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="{4A947FCC-005D-4BEF-BA0A-170FB8D6F6B1}"
+    Scope="perMachine"
+    InstallerVersion="500"
+    Compressed="yes">
+
+    <SummaryInformation Description="FSP Orchestrator local management plane" />
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of FSP Orchestrator is already installed."
+      Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="REMOVELOCALDATA" Value="0" Secure="yes" />
+    <Property Id="MSIFASTINSTALL" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="FSP Orchestrator" />
+    </StandardDirectory>
+
+    <Files Include="!(bindpath.PublishedApp)\**" Directory="INSTALLFOLDER">
+      <Exclude Files="!(bindpath.PublishedApp)\Orchestrator.Api.exe" />
+    </Files>
+
+    <Component Id="ServiceComponent" Directory="INSTALLFOLDER" Guid="{9BD445D4-8D89-4A3F-A3BF-C9D70C1CECB7}">
+      <File
+        Id="ServiceExecutable"
+        Source="!(bindpath.PublishedApp)\Orchestrator.Api.exe"
+        KeyPath="yes" />
+      <ServiceInstall
+        Id="OrchestratorServiceInstall"
+        Name="FSP Orchestrator"
+        DisplayName="FSP Orchestrator"
+        Description="Local management plane for Fabric Shortcut Proxy."
+        Account="LocalSystem"
+        ErrorControl="normal"
+        Start="auto"
+        Type="ownProcess" />
+      <ServiceControl
+        Id="OrchestratorServiceControl"
+        Name="FSP Orchestrator"
+        Start="install"
+        Stop="both"
+        Remove="uninstall"
+        Wait="yes" />
+    </Component>
+
+    <Component Id="InstallerActionsComponent" Directory="INSTALLFOLDER" Guid="{BAA17EA5-6F93-46CC-8F87-BBCE12258B9B}">
+      <File
+        Id="InstallerActionsExecutable"
+        Source="!(bindpath.PublishedActions)\Orchestrator.InstallerActions.exe"
+        KeyPath="yes" />
+    </Component>
+
+    <CustomAction
+      Id="EnsureCertificate"
+      FileRef="InstallerActionsExecutable"
+      ExeCommand="certificate ensure &quot;[INSTALLFOLDER]appsettings.Production.json&quot;"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check" />
+    <CustomAction
+      Id="RemoveCertificate"
+      FileRef="InstallerActionsExecutable"
+      ExeCommand="certificate remove"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check" />
+    <CustomAction
+      Id="PromptDataRetention"
+      FileRef="InstallerActionsExecutable"
+      ExeCommand="data prompt-retention &quot;[TempFolder]FspOrchestrator-remove-[ProductCode].marker&quot;"
+      Execute="immediate"
+      Impersonate="yes"
+      Return="check" />
+    <CustomAction
+      Id="MarkDataRemoval"
+      FileRef="InstallerActionsExecutable"
+      ExeCommand="data mark-removal &quot;[TempFolder]FspOrchestrator-remove-[ProductCode].marker&quot;"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check" />
+    <CustomAction
+      Id="RemoveDataIfRequested"
+      FileRef="InstallerActionsExecutable"
+      ExeCommand="data remove-if-requested &quot;[TempFolder]FspOrchestrator-remove-[ProductCode].marker&quot;"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom
+        Action="PromptDataRetention"
+        Before="InstallInitialize"
+        Condition="REMOVE = &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE AND UILevel &gt;= 3 AND REMOVELOCALDATA &lt;&gt; 1" />
+      <Custom
+        Action="EnsureCertificate"
+        After="InstallFiles"
+        Condition="NOT Installed OR REINSTALL OR WIX_UPGRADE_DETECTED" />
+      <Custom
+        Action="MarkDataRemoval"
+        After="StopServices"
+        Condition="REMOVE = &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE AND REMOVELOCALDATA = 1" />
+      <Custom
+        Action="RemoveCertificate"
+        After="MarkDataRemoval"
+        Condition="REMOVE = &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom
+        Action="RemoveDataIfRequested"
+        After="RemoveCertificate"
+        Condition="REMOVE = &quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+  </Package>
+</Wix>

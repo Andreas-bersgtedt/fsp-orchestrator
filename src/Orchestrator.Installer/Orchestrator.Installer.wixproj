@@ -1,0 +1,28 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputType>Package</OutputType>
+    <SuppressValidation>true</SuppressValidation>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
+    <DefineConstants>ProductVersion=$(ProductVersion)</DefineConstants>
+    <PublishedAppDir Condition="'$(PublishedAppDir)' == ''">$(MSBuildProjectDirectory)\..\..\artifacts\installer\app</PublishedAppDir>
+    <PublishedActionsDir Condition="'$(PublishedActionsDir)' == ''">$(MSBuildProjectDirectory)\..\..\artifacts\installer\actions</PublishedActionsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <BindPath Include="$(PublishedAppDir)" BindName="PublishedApp" />
+    <BindPath Include="$(PublishedActionsDir)" BindName="PublishedActions" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <Target Name="ValidatePublishedInputs" BeforeTargets="Build">
+    <Error
+      Condition="!Exists('$(PublishedAppDir)\Orchestrator.Api.exe')"
+      Text="Publish Orchestrator.Api for win-x64 to $(PublishedAppDir) before building the installer." />
+    <Error
+      Condition="!Exists('$(PublishedActionsDir)\Orchestrator.InstallerActions.exe')"
+      Text="Publish Orchestrator.InstallerActions for win-x64 to $(PublishedActionsDir) before building the installer." />
+  </Target>
+
+</Project>
