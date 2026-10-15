@@ -38,9 +38,11 @@ type RegistrationResponse = {
 export function RegisterDeployment({
   acquireAccessToken,
   apiScope,
+  onRegistered,
 }: {
   acquireAccessToken: (scopes: string[]) => Promise<string>
   apiScope: string
+  onRegistered: () => void
 }) {
   const [name, setName] = useState('')
   const [endpoint, setEndpoint] = useState('')
@@ -91,6 +93,7 @@ export function RegisterDeployment({
         }
 
         setResult((await response.json()) as RegistrationResponse)
+        onRegistered()
       } catch (registrationError) {
         setError(errorMessage(registrationError))
       } finally {
@@ -105,6 +108,7 @@ export function RegisterDeployment({
       credentialReference,
       endpoint,
       name,
+      onRegistered,
     ],
   )
 

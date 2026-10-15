@@ -165,6 +165,11 @@ GET {{baseUrl}}/api/deployments/{{deploymentId}}
 Accept: application/json
 Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
 
+### List registered deployments and observation state
+GET {{baseUrl}}/api/deployments
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
 ### Get latest and last successful observations
 GET {{baseUrl}}/api/deployments/{{deploymentId}}/observations/current
 Accept: application/json
@@ -172,5 +177,10 @@ Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
 
 ### Refresh deployment observations
 POST {{baseUrl}}/api/deployments/{{deploymentId}}/observations
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### List job reports for a deployment
+GET {{baseUrl}}/api/deployments/{{deploymentId}}/jobs
 Accept: application/json
 Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}

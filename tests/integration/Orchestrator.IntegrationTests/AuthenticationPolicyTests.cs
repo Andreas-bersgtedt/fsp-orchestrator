@@ -334,7 +334,20 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         Assert.Equal("Lite", registration!.Deployment.Topology);
         Assert.Equal("3.1.0", Assert.Single(registration.Components).Version);
         var get = await client.GetAsync(response.Headers.Location);
+        var list = await client.GetAsync("/api/deployments");
+        var inventory = await list.Content
+            .ReadFromJsonAsync<DeploymentListResponse>();
+        var jobs = await client.GetAsync(
+            $"/api/deployments/{registration.Deployment.Id}/jobs");
+        var jobList = await jobs.Content
+            .ReadFromJsonAsync<DeploymentJobListResponse>();
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        Assert.Contains(
+            inventory!.Deployments,
+            item => item.Deployment.Id == registration.Deployment.Id);
+        Assert.Equal(HttpStatusCode.OK, jobs.StatusCode);
+        Assert.Empty(jobList!.Jobs);
     }
 
     [Fact]

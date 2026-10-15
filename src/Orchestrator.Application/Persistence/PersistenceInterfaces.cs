@@ -28,6 +28,10 @@ public interface IInventoryStore
 
 public interface IJobStore
 {
+    Task<IReadOnlyList<JobInfo>> ListForDeploymentAsync(
+        Guid deploymentId,
+        CancellationToken cancellationToken);
+
     Task<JobInfo> CreateAsync(
         CreateJob request,
         CancellationToken cancellationToken);

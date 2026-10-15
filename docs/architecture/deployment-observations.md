@@ -42,3 +42,24 @@ The current API returns two separate facts:
 A failed attempt therefore cannot make an older successful result look
 current. Service cancellation stops the active probe or transaction and does
 not write a partial attempt.
+
+## Inventory display
+
+The inventory screen derives `Stale` when the latest healthy attempt is older
+than twice the configured polling interval. `Unreachable`,
+`Authentication failed`, `Incompatible`, and `Invalid response` come directly
+from the latest attempt and are never replaced by an older healthy value.
+
+Deployment detail shows:
+
+- topology and Azure resource scope;
+- latest and last-successful collection times;
+- health, readiness, fleet, queue, and component-version values from the last
+  successful attempt;
+- current job reports;
+- explicit `Not evaluated` or `Not configured` labels for drift, backup, and
+  upgrade features that are not implemented yet.
+
+Deployment selectors are native buttons with `aria-pressed`. The selected
+status uses an atomic polite live region so keyboard and screen-reader users
+receive the new status and collection time after selection.
