@@ -13,25 +13,16 @@ public static class BootstrapEndpoints
         this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost(
-                "/api/bootstrap/identity/commit",
+                "/api/identity/registrations/apply",
                 async Task<Results<Ok<BootstrapCommitResponse>, ProblemHttpResult>> (
                     BootstrapCommitRequest request,
                     HttpRequest httpRequest,
-                    EntraAuthenticationConfiguration currentConfiguration,
                     ICandidateApiTokenValidator tokenValidator,
                     IEntraRegistrationValidator registrationValidator,
                     IIdentityConfigurationStore configurationStore,
                     IApplicationRestartScheduler restartScheduler,
                     CancellationToken cancellationToken) =>
                 {
-                    if (currentConfiguration.IsConfigured)
-                    {
-                        return TypedResults.Problem(
-                            statusCode: StatusCodes.Status409Conflict,
-                            title: "Identity is already configured",
-                            detail: "Bootstrap configuration cannot replace active identity settings.");
-                    }
-
                     if (!TryGetBearerToken(httpRequest, out var accessToken))
                     {
                         return TypedResults.Problem(
@@ -109,15 +100,15 @@ public static class BootstrapEndpoints
                                 + "to activate normal Entra authentication."));
                 })
             .AllowAnonymous()
-            .WithName("CommitBootstrapIdentity")
-            .WithSummary("Validate and commit bootstrap identity configuration")
+            .WithName("ApplyIdentityRegistrations")
+            .WithSummary("Validate and apply identity registrations")
             .WithDescription(
                 "Accepts only a candidate API token and public registration metadata. "
-                + "Microsoft Graph tokens and anonymous writes are rejected.")
+                + "Microsoft Graph tokens and unproven configuration writes are rejected.")
             .Produces<BootstrapCommitResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return endpoints;
     }
@@ -182,7 +173,7 @@ public sealed record CandidateIdentityConfigurationRequest
             StringComparison.Ordinal);
 }
 
-/// <summary>Result of an atomic public identity configuration commit.</summary>
+/// <summary>Result of an atomic public identity configuration apply.</summary>
 public sealed record BootstrapCommitResponse(
     bool Committed,
     bool RestartRequired,

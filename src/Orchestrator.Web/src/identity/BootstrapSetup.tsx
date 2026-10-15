@@ -13,14 +13,12 @@ import {
   Text,
   Title2,
 } from '@fluentui/react-components'
-import { PublicClientApplication } from '@azure/msal-browser'
 import { useMemo, useState } from 'react'
 import type {
   BootstrapAuthenticationConfiguration,
   BootstrapOperatorAccount,
 } from '../auth/authTypes.ts'
-import { savePendingCandidateSetup } from '../auth/candidateSetup.ts'
-import { clearStaleMsalInteraction } from '../auth/msalInteraction.ts'
+import { beginCandidateConfiguration } from '../auth/candidateSetup.ts'
 import {
   discoverOwnedApplications,
   servicePrincipalExists,
@@ -107,28 +105,12 @@ export function BootstrapSetup({
           signedInUserRoles: ['SecurityAdmin'],
         } satisfies CreatedRegistrationPair)
       const apiScope = `api://${api.appId}/orchestrator.access_as_user`
-      savePendingCandidateSetup({
+      await beginCandidateConfiguration({
         tenantId: account.tenantId,
         spaClientId: spa.appId,
         apiClientId: api.appId,
         apiScope,
         pair,
-      })
-      const candidate = new PublicClientApplication({
-        auth: {
-          authority: `https://login.microsoftonline.com/${account.tenantId}`,
-          clientId: spa.appId,
-          redirectUri: 'https://localhost:9443/auth/callback',
-        },
-        cache: {
-          cacheLocation: 'sessionStorage',
-        },
-      })
-      await candidate.initialize()
-      clearStaleMsalInteraction()
-      await candidate.loginRedirect({
-        prompt: 'select_account',
-        scopes: [apiScope],
       })
     })
   }

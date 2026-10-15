@@ -293,6 +293,12 @@ function SessionController({
       kind: 'signed-in',
       session,
       apiScope: configuration.apiScope,
+      identityConfiguration: {
+        tenantId: configuration.tenantId,
+        spaClientId: configuration.spaClientId,
+        apiClientId: configuration.apiClientId,
+        scopeName: configuration.apiScope.split('/').at(-1) ?? '',
+      },
       acquireAccessToken,
       signOut,
     }

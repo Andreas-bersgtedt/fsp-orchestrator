@@ -9,36 +9,18 @@ public sealed class IdentityConfigurationStoreTests
     [Fact]
     public async Task CommitAtomicallyStoresOnlyPublicIdentityConfiguration()
     {
-        var directory = Path.Combine(
-            Path.GetTempPath(),
-            $"fsp-identity-store-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(directory);
+        var directory = CreateTestDirectory("store");
         try
         {
-            var store = new IdentityConfigurationStore(
-                new HostingRuntime(
-                    "https://localhost:9443",
-                    directory,
-                    DateTimeOffset.UtcNow.AddDays(1)));
-            var configuration = new PersistedIdentityConfiguration(
-                "https://login.microsoftonline.com/",
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
-                "orchestrator.access_as_user",
-                Guid.NewGuid().ToString(),
-                DateTimeOffset.UtcNow);
+            using var store = CreateStore(directory);
+            var configuration = Configuration(Guid.NewGuid().ToString());
 
-            await store.CommitAsync(
-                configuration,
-                CancellationToken.None);
+            await store.CommitAsync(configuration, CancellationToken.None);
 
             var path = Path.Combine(
                 directory,
                 IdentityConfigurationStore.FileName);
-            var json = await File.ReadAllTextAsync(
-                path,
-                CancellationToken.None);
+            var json = await File.ReadAllTextAsync(path, CancellationToken.None);
             using var document = JsonDocument.Parse(json);
             var entra = document.RootElement
                 .GetProperty("Authentication")
@@ -60,4 +42,61 @@ public sealed class IdentityConfigurationStoreTests
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task RollbackRestoresPreviousIdentityConfiguration()
+    {
+        var directory = CreateTestDirectory("rollback");
+        try
+        {
+            using var store = CreateStore(directory);
+            var original = Configuration(Guid.NewGuid().ToString());
+            await store.CommitAsync(original, CancellationToken.None);
+            var replacement = Configuration(Guid.NewGuid().ToString());
+            await store.CommitAsync(replacement, CancellationToken.None);
+
+            await store.RollbackAsync(CancellationToken.None);
+
+            var json = await File.ReadAllTextAsync(
+                Path.Combine(directory, IdentityConfigurationStore.FileName));
+            using var document = JsonDocument.Parse(json);
+            Assert.Equal(
+                original.TenantId,
+                document.RootElement
+                    .GetProperty("Authentication")
+                    .GetProperty("Entra")
+                    .GetProperty("TenantId")
+                    .GetString());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static IdentityConfigurationStore CreateStore(string directory) =>
+        new(
+            new HostingRuntime(
+                "https://localhost:9443",
+                directory,
+                DateTimeOffset.UtcNow.AddDays(1)));
+
+    private static string CreateTestDirectory(string suffix)
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"fsp-identity-{suffix}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
+
+    private static PersistedIdentityConfiguration Configuration(string tenantId) =>
+        new(
+            "https://login.microsoftonline.com/",
+            tenantId,
+            Guid.NewGuid().ToString(),
+            Guid.NewGuid().ToString(),
+            "orchestrator.access_as_user",
+            Guid.NewGuid().ToString(),
+            DateTimeOffset.UtcNow);
 }
