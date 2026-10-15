@@ -46,6 +46,7 @@ public sealed class PrerequisiteGate(
         var blocking = new List<string>();
         var stale = new List<string>();
         var expired = new List<string>();
+        var immediateRecheck = new List<string>();
         foreach (var result in run.Results.Where(result => result.Blocking))
         {
             if (!definitions.TryGetValue(result.CheckId, out var definition))
@@ -69,6 +70,13 @@ public sealed class PrerequisiteGate(
                 expired.Add(result.CheckId);
             }
 
+            if (definition.ApplyFreshness is { } freshness
+                && (result.CompletedAt is null
+                    || result.CompletedAt + freshness <= now))
+            {
+                immediateRecheck.Add(result.CheckId);
+            }
+
             if (result.Status is not (PrerequisiteCheckStatus.Passed
                 or PrerequisiteCheckStatus.Warning))
             {
@@ -90,6 +98,14 @@ public sealed class PrerequisiteGate(
                 "prerequisite.run_expired",
                 "One or more prerequisite results expired.",
                 expired);
+        }
+
+        if (immediateRecheck.Count > 0)
+        {
+            return Denied(
+                "prerequisite.immediate_recheck_required",
+                "One or more time-sensitive checks must run again immediately before apply.",
+                immediateRecheck);
         }
 
         if (blocking.Count > 0)

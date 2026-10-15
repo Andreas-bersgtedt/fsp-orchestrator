@@ -11,7 +11,8 @@ public sealed record PrerequisiteCheckDefinition(
     TimeSpan Timeout,
     TimeSpan Lifetime,
     bool Blocking,
-    string Version);
+    string Version,
+    TimeSpan? ApplyFreshness = null);
 
 public sealed record PrerequisiteRunRequest(
     Guid Id,

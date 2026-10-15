@@ -26,6 +26,7 @@ type CheckDefinition = {
   operations: string[]
   timeoutMilliseconds: number
   lifetimeSeconds: number
+  applyFreshnessSeconds?: number
   blocking: boolean
 }
 

@@ -190,6 +190,11 @@ The API verifies that the Orchestrator and ARM tokens identify the same tenant,
 user, and SPA client before listing allowed subscriptions and stable resource
 IDs.
 
+Azure deployment inputs pass the
+[Azure prerequisite checker set](./docs/architecture/azure-deployment-prerequisites.md)
+for provider registration, exact RBAC actions, quota, regional Kubernetes
+versions, names, network ranges, and private DNS before preview or apply.
+
 Registered deployments are polled by the
 [observation scheduler](./docs/architecture/deployment-observations.md).
 Latest failures are reported separately from the timestamp and values of the

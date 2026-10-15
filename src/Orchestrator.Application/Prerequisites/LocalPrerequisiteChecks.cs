@@ -3,6 +3,7 @@ namespace Fsp.Orchestrator.Application.Prerequisites;
 public static class PrerequisiteSystemInputKeys
 {
     public const string CurrentTenantId = "$orchestrator.currentTenantId";
+    public const string CurrentObjectId = "$orchestrator.currentObjectId";
     public const string CurrentRoles = "$orchestrator.currentRoles";
     public const string CurrentClientId = "$orchestrator.currentClientId";
     public const string CurrentScopes = "$orchestrator.currentScopes";
@@ -54,6 +55,7 @@ public static class LocalPrerequisiteCatalog
     private static readonly string[] IdentityInputKeys =
     [
         PrerequisiteSystemInputKeys.CurrentTenantId,
+        PrerequisiteSystemInputKeys.CurrentObjectId,
         PrerequisiteSystemInputKeys.CurrentRoles,
         PrerequisiteSystemInputKeys.CurrentClientId,
         PrerequisiteSystemInputKeys.CurrentScopes,

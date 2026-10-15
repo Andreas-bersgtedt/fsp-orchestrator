@@ -198,6 +198,33 @@ public sealed class PrerequisiteEngineTests
     }
 
     [Fact]
+    public async Task GateRequiresImmediateRerunForTimeSensitiveCheck()
+    {
+        var time = new MutableTimeProvider(DateTimeOffset.UtcNow);
+        var check = Check(
+            "quota",
+            [],
+            _ => Task.FromResult(Passed()),
+            applyFreshness: TimeSpan.FromSeconds(30));
+        var store = new InMemoryRunStore();
+        var engine = CreateEngine([check], store, timeProvider: time);
+        var run = await engine.RunAsync(Request(), CancellationToken.None);
+        var gate = new PrerequisiteGate(store, [check], time);
+        time.Advance(TimeSpan.FromSeconds(31));
+
+        var result = await gate.ValidateAsync(
+            run.Id,
+            "deploy",
+            new Dictionary<string, string>(),
+            CancellationToken.None);
+
+        Assert.Equal(
+            "prerequisite.immediate_recheck_required",
+            result.Code);
+        Assert.Contains("quota", result.BlockingCheckIds);
+    }
+
+    [Fact]
     public void MissingDependencyAndCycleAreRejected()
     {
         Assert.Throws<InvalidOperationException>(
@@ -233,7 +260,8 @@ public sealed class PrerequisiteEngineTests
         Func<CancellationToken, Task<PrerequisiteCheckOutcome>> execute,
         TimeSpan? timeout = null,
         TimeSpan? lifetime = null,
-        IReadOnlyList<string>? inputKeys = null) =>
+        IReadOnlyList<string>? inputKeys = null,
+        TimeSpan? applyFreshness = null) =>
         new(
             new PrerequisiteCheckDefinition(
                 id,
@@ -246,7 +274,8 @@ public sealed class PrerequisiteEngineTests
                 timeout ?? TimeSpan.FromSeconds(5),
                 lifetime ?? TimeSpan.FromMinutes(5),
                 true,
-                "1.0"),
+                "1.0",
+                applyFreshness),
             execute);
 
     private static PrerequisiteRunRequest Request(
