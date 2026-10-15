@@ -69,6 +69,7 @@ function Assert-HttpsReady {
                 -Uri 'https://localhost:9443/api/health' `
                 -UseBasicParsing `
                 -NoProxy `
+                -SkipCertificateCheck `
                 -TimeoutSec 5
             if ($response.StatusCode -eq 200) {
                 return
@@ -84,17 +85,36 @@ function Assert-HttpsReady {
     throw "The installed HTTPS service did not become healthy. Service=$($service.Status); LastError=$($lastError.Exception.Message)"
 }
 
+function Assert-CertificateTrusted {
+    $certificate = Get-ChildItem Cert:\LocalMachine\My |
+        Where-Object FriendlyName -EQ 'FSP Orchestrator localhost' |
+        Sort-Object NotAfter -Descending |
+        Select-Object -First 1
+    if ($null -eq $certificate -or -not $certificate.HasPrivateKey) {
+        throw 'The installer did not provision the localhost certificate.'
+    }
+
+    $chain = [Security.Cryptography.X509Certificates.X509Chain]::new()
+    try {
+        $chain.ChainPolicy.RevocationMode =
+            [Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+        if (-not $chain.Build($certificate)) {
+            $statuses = $chain.ChainStatus |
+                ForEach-Object { "$($_.Status): $($_.StatusInformation.Trim())" }
+            throw "The localhost certificate is not trusted: $($statuses -join '; ')"
+        }
+    }
+    finally {
+        $chain.Dispose()
+    }
+}
+
 try {
     Invoke-Msi install $BaselineMsi
     $installedMsi = $BaselineMsi
     Assert-ServiceRunning
+    Assert-CertificateTrusted
     Assert-HttpsReady
-
-    $certificate = Get-ChildItem Cert:\LocalMachine\My |
-        Where-Object FriendlyName -EQ 'FSP Orchestrator localhost'
-    if ($null -eq $certificate -or -not $certificate.HasPrivateKey) {
-        throw 'The installer did not provision the localhost certificate.'
-    }
 
     Remove-Item (Join-Path $installDirectory 'appsettings.Production.json') -Force
     Invoke-Msi repair $BaselineMsi
