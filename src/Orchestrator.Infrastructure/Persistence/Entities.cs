@@ -110,3 +110,55 @@ internal sealed class AuditEventEntity
 
     public required string InputHash { get; set; }
 }
+
+internal sealed class PrerequisiteRunEntity
+{
+    public Guid Id { get; set; }
+
+    public required string Operation { get; set; }
+
+    public Application.Prerequisites.PrerequisiteRunStatus Status { get; set; }
+
+    public required string InputFingerprint { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public DateTimeOffset? StartedAt { get; set; }
+
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public List<PrerequisiteResultEntity> Results { get; } = [];
+}
+
+internal sealed class PrerequisiteResultEntity
+{
+    public Guid RunId { get; set; }
+
+    public required string CheckId { get; set; }
+
+    public required string Category { get; set; }
+
+    public bool Blocking { get; set; }
+
+    public Application.Prerequisites.PrerequisiteCheckStatus Status { get; set; }
+
+    public required string Code { get; set; }
+
+    public required string Summary { get; set; }
+
+    public required string EvidenceJson { get; set; }
+
+    public required string Remediation { get; set; }
+
+    public required string InputFingerprint { get; set; }
+
+    public DateTimeOffset? StartedAt { get; set; }
+
+    public DateTimeOffset? CompletedAt { get; set; }
+
+    public DateTimeOffset? ExpiresAt { get; set; }
+
+    public long DurationMilliseconds { get; set; }
+
+    public PrerequisiteRunEntity? Run { get; set; }
+}

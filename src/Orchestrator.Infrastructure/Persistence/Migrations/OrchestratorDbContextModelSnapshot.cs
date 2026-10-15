@@ -243,6 +243,107 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.ToTable("Observations", (string)null);
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteResultEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CheckId")
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Blocking")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DurationMilliseconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InputFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Remediation")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RunId", "CheckId");
+
+                    b.ToTable("PrerequisiteResults", (string)null);
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteRunEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InputFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Operation", "CreatedAt");
+
+                    b.ToTable("PrerequisiteRuns", (string)null);
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>
                 {
                     b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", "Deployment")
@@ -275,6 +376,17 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
                     b.Navigation("Deployment");
                 });
 
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteResultEntity", b =>
+                {
+                    b.HasOne("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteRunEntity", "Run")
+                        .WithMany("Results")
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Run");
+                });
+
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.DeploymentEntity", b =>
                 {
                     b.Navigation("Jobs");
@@ -285,6 +397,11 @@ namespace Orchestrator.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.JobEntity", b =>
                 {
                     b.Navigation("Steps");
+                });
+
+            modelBuilder.Entity("Fsp.Orchestrator.Infrastructure.Persistence.PrerequisiteRunEntity", b =>
+                {
+                    b.Navigation("Results");
                 });
 #pragma warning restore 612, 618
         }

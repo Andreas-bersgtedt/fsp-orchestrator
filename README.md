@@ -173,6 +173,11 @@ database under the service data directory. Migrations and integrity checks run
 before readiness; backup and restore use managed files and approved SHA-256
 hashes. See [local SQLite persistence](./docs/architecture/sqlite-persistence.md).
 
+Protected operations use the typed
+[prerequisite checker engine](./docs/architecture/prerequisite-engine.md) for
+dependency ordering, bounded concurrency, timeout/cancellation, input
+fingerprints, expiry, and blocking apply gates.
+
 The engineering sequence is:
 
 1. publish and test the FSP 3.1.0 API and release contracts;

@@ -193,6 +193,33 @@ internal sealed class DatabaseMaintenance(
         string destinationPath,
         CancellationToken cancellationToken)
     {
+        const int maximumAttempts = 5;
+        for (var attempt = 1; attempt <= maximumAttempts; attempt++)
+        {
+            try
+            {
+                await BackupOnceAsync(
+                    sourcePath,
+                    destinationPath,
+                    cancellationToken);
+                return;
+            }
+            catch (SqliteException exception)
+                when (exception.SqliteErrorCode is 5 or 6
+                    && attempt < maximumAttempts)
+            {
+                await Task.Delay(
+                    TimeSpan.FromMilliseconds(50 * attempt),
+                    cancellationToken);
+            }
+        }
+    }
+
+    private static async Task BackupOnceAsync(
+        string sourcePath,
+        string destinationPath,
+        CancellationToken cancellationToken)
+    {
         await using var source = new SqliteConnection(
             ConnectionString(sourcePath, SqliteOpenMode.ReadOnly));
         await using var destination = new SqliteConnection(

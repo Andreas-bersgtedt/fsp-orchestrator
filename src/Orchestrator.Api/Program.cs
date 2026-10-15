@@ -4,6 +4,7 @@ using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Fsp.Orchestrator.Application.Identity;
+using Fsp.Orchestrator.Application.Prerequisites;
 using Fsp.Orchestrator.Infrastructure.Persistence;
 
 var applicationArgs = await ProcessRestartBootstrap.PrepareAsync(args);
@@ -31,6 +32,12 @@ builder.Services.AddSingleton<IApplicationRestartScheduler, ApplicationRestartSc
 builder.Services.AddOrchestratorPersistence(
     Path.Combine(hostingRuntime.DataDirectory, "orchestrator.db"));
 builder.Services.AddHostedService<DatabaseMigrationHostedService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IPrerequisiteEvidenceSanitizer, PrerequisiteEvidenceSanitizer>();
+builder.Services.AddSingleton<IPrerequisiteErrorReporter, PrerequisiteErrorReporter>();
+builder.Services.AddSingleton<IPrerequisiteEngine, PrerequisiteEngine>();
+builder.Services.AddSingleton<IPrerequisiteGate, PrerequisiteGate>();
+builder.Services.AddSingleton<IPrerequisiteRunCoordinator, PrerequisiteRunCoordinator>();
 builder.Services.AddSingleton<IOpenIdConfigurationResolver, OpenIdConfigurationResolver>();
 builder.Services.AddSingleton<ICandidateApiTokenValidator, CandidateApiTokenValidator>();
 builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
@@ -68,6 +75,7 @@ api.MapHealth();
 api.MapAuthentication();
 api.MapEntraRegistrations();
 api.MapDatabase();
+api.MapPrerequisites();
 app.MapBootstrap();
 api.MapMethods(
         "/{**path}",

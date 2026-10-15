@@ -16,6 +16,12 @@ public sealed class OrchestratorDbContext(
 
     internal DbSet<AuditEventEntity> AuditEvents => Set<AuditEventEntity>();
 
+    internal DbSet<PrerequisiteRunEntity> PrerequisiteRuns =>
+        Set<PrerequisiteRunEntity>();
+
+    internal DbSet<PrerequisiteResultEntity> PrerequisiteResults =>
+        Set<PrerequisiteResultEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DeploymentEntity>(
@@ -89,6 +95,34 @@ public sealed class OrchestratorDbContext(
                 entity.Property(item => item.InputHash).HasMaxLength(128);
                 entity.HasIndex(item => item.OccurredAt);
                 entity.HasIndex(item => item.CorrelationId);
+            });
+        modelBuilder.Entity<PrerequisiteRunEntity>(
+            entity =>
+            {
+                entity.ToTable("PrerequisiteRuns");
+                entity.HasKey(item => item.Id);
+                entity.Property(item => item.Operation).HasMaxLength(100);
+                entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(30);
+                entity.Property(item => item.InputFingerprint).HasMaxLength(64);
+                entity.HasIndex(item => new { item.Operation, item.CreatedAt });
+            });
+        modelBuilder.Entity<PrerequisiteResultEntity>(
+            entity =>
+            {
+                entity.ToTable("PrerequisiteResults");
+                entity.HasKey(item => new { item.RunId, item.CheckId });
+                entity.Property(item => item.CheckId).HasMaxLength(150);
+                entity.Property(item => item.Category).HasMaxLength(100);
+                entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(30);
+                entity.Property(item => item.Code).HasMaxLength(150);
+                entity.Property(item => item.Summary).HasMaxLength(2_048);
+                entity.Property(item => item.EvidenceJson).HasMaxLength(32_768);
+                entity.Property(item => item.Remediation).HasMaxLength(4_096);
+                entity.Property(item => item.InputFingerprint).HasMaxLength(64);
+                entity.HasOne(item => item.Run)
+                    .WithMany(item => item.Results)
+                    .HasForeignKey(item => item.RunId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
     }
 
