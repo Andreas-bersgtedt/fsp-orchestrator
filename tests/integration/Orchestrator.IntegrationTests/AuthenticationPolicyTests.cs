@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
+using Fsp.Orchestrator.Application.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -140,6 +141,35 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
+    public async Task RegistrationValidationRequiresSecurityAdmin()
+    {
+        using var reader = CreateAuthenticatedClient(OrchestratorRoles.Reader);
+
+        var response = await reader.PostAsJsonAsync(
+            "/api/identity/registrations/validate",
+            ValidRegistrationRequest());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SecurityAdminCanValidateRegistrationPair()
+    {
+        using var securityAdmin =
+            CreateAuthenticatedClient(OrchestratorRoles.SecurityAdmin);
+
+        var response = await securityAdmin.PostAsJsonAsync(
+            "/api/identity/registrations/validate",
+            ValidRegistrationRequest());
+        var validation =
+            await response.Content.ReadFromJsonAsync<EntraRegistrationValidationResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(validation!.Passed);
+        Assert.All(validation.Checks, check => Assert.Equal("Passed", check.Status));
+    }
+
+    [Fact]
     public async Task PublicConfigurationContainsOnlyPkceIdentifiers()
     {
         using var client = factory!.CreateClient();
@@ -188,6 +218,69 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         client.DefaultRequestHeaders.Add("X-Test-Scopes", scopes);
         client.DefaultRequestHeaders.Add("X-Test-Roles", role);
         return client;
+    }
+
+    private static ValidateEntraRegistrationsRequest ValidRegistrationRequest()
+    {
+        var scopeId = Guid.NewGuid();
+        var spa = new EntraApplicationRegistrationRequest
+        {
+            ObjectId = Guid.NewGuid().ToString(),
+            AppId = SpaClientId,
+            DisplayName = "FSP Orchestrator SPA",
+            SignInAudience = EntraRegistrationContract.SingleTenantAudience,
+            SpaRedirectUris = [EntraRegistrationContract.RedirectUri],
+            IdentifierUris = [],
+            DelegatedScopes = [],
+            AppRoles = [],
+            PreAuthorizedApplications = [],
+            PasswordCredentialCount = 0,
+            KeyCredentialCount = 0,
+        };
+        var api = new EntraApplicationRegistrationRequest
+        {
+            ObjectId = Guid.NewGuid().ToString(),
+            AppId = ApiClientId,
+            DisplayName = "FSP Orchestrator API",
+            SignInAudience = EntraRegistrationContract.SingleTenantAudience,
+            SpaRedirectUris = [],
+            IdentifierUris = [$"api://{ApiClientId}"],
+            DelegatedScopes =
+            [
+                new EntraDelegatedScopeRequest(
+                    scopeId,
+                    EntraRegistrationContract.ScopeName,
+                    "User",
+                    true),
+            ],
+            AppRoles = EntraRegistrationContract.Roles
+                .Select(
+                    role => new EntraAppRoleRequest(
+                        Guid.NewGuid(),
+                        role,
+                        ["User"],
+                        true))
+                .ToArray(),
+            PreAuthorizedApplications =
+            [
+                new EntraPreAuthorizedApplicationRequest(
+                    SpaClientId,
+                    [scopeId]),
+            ],
+            PasswordCredentialCount = 0,
+            KeyCredentialCount = 0,
+        };
+
+        return new ValidateEntraRegistrationsRequest
+        {
+            TenantId = TenantId,
+            SignedInTenantId = TenantId,
+            Spa = spa,
+            Api = api,
+            SpaServicePrincipalExists = true,
+            ApiServicePrincipalExists = true,
+            SignedInUserRoles = [OrchestratorRoles.SecurityAdmin],
+        };
     }
 
     private sealed class AuthenticationApplicationFactory(

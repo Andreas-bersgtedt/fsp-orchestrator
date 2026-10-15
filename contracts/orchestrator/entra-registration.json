@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "signInAudience": "AzureADMyOrg",
+  "spa": {
+    "redirectUris": [
+      "https://localhost:9443/auth/callback"
+    ],
+    "credentialsAllowed": false
+  },
+  "api": {
+    "applicationIdUriFormat": "api://{apiClientId}",
+    "delegatedScope": {
+      "value": "orchestrator.access_as_user",
+      "type": "User",
+      "enabled": true
+    },
+    "credentialsAllowed": false,
+    "roles": [
+      {
+        "value": "Reader",
+        "allowedMemberTypes": [
+          "User"
+        ]
+      },
+      {
+        "value": "Operator",
+        "allowedMemberTypes": [
+          "User"
+        ]
+      },
+      {
+        "value": "ConfigurationAdmin",
+        "allowedMemberTypes": [
+          "User"
+        ]
+      },
+      {
+        "value": "DeploymentAdmin",
+        "allowedMemberTypes": [
+          "User"
+        ]
+      },
+      {
+        "value": "SecurityAdmin",
+        "allowedMemberTypes": [
+          "User"
+        ]
+      }
+    ]
+  }
+}

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Fsp.Orchestrator.Api.Authentication;
 using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
+using Fsp.Orchestrator.Application.Identity;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -18,6 +19,7 @@ builder.Host.UseWindowsService(options =>
 var hostingRuntime = LoopbackHosting.Configure(builder);
 builder.Services.AddSingleton(hostingRuntime);
 builder.Services.AddSingleton<StartupReadiness>();
+builder.Services.AddSingleton<IEntraRegistrationValidator, EntraRegistrationValidator>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
@@ -50,6 +52,7 @@ var api = app.MapGroup("/api")
     .RequireAuthorization(AuthorizationPolicies.Access);
 api.MapHealth();
 api.MapAuthentication();
+api.MapEntraRegistrations();
 api.MapMethods(
         "/{**path}",
         ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],

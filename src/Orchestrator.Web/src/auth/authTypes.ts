@@ -25,6 +25,8 @@ export type AuthenticationState =
   | {
       kind: 'signed-in'
       session: OperatorSession
+      apiScope: string
+      acquireAccessToken: (scopes: string[]) => Promise<string>
       signOut: () => Promise<void>
     }
   | {
