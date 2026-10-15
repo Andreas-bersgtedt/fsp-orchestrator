@@ -36,6 +36,10 @@ installer files, and isolated development or contract-test fixtures. Test
 fixtures must be named as test-only inputs and must not be referenced by
 production application projects.
 
+Deployment mutation APIs must evaluate the release-manifest compatibility gate
+against the latest successful remote observation. Read-only health and
+observation APIs remain available when that gate blocks mutation.
+
 ## Consequences
 
 - Existing FSP deployments can be registered with an endpoint and identity

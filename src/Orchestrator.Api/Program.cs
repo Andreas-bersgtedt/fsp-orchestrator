@@ -78,6 +78,10 @@ builder.Services.AddSingleton<
 builder.Services.AddSingleton<
     IDeploymentObservationService,
     DeploymentObservationService>();
+builder.Services.AddSingleton<
+    IReleaseCompatibilityPolicy,
+    ReleaseManifestCompatibilityPolicy>();
+builder.Services.AddSingleton<IDeploymentMutationGate, DeploymentMutationGate>();
 builder.Services.AddHostedService<DeploymentObservationHostedService>();
 builder.Services.AddOrchestratorAuthentication(builder.Configuration);
 builder.Services.AddHttpClient(nameof(LocalPrerequisiteProbe));

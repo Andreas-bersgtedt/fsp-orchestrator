@@ -184,3 +184,8 @@ Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
 GET {{baseUrl}}/api/deployments/{{deploymentId}}/jobs
 Accept: application/json
 Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Validate release compatibility before mutation
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/mutation-gate
+Accept: application/json
+Authorization: Bearer {{ORCHESTRATOR_ACCESS_TOKEN}}

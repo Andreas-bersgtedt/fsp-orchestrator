@@ -335,8 +335,8 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         Assert.Equal("3.1.0", Assert.Single(registration.Components).Version);
         var get = await client.GetAsync(response.Headers.Location);
         var list = await client.GetAsync("/api/deployments");
-        var inventory = await list.Content
-            .ReadFromJsonAsync<DeploymentListResponse>();
+        using var inventory = JsonDocument.Parse(
+            await list.Content.ReadAsStringAsync());
         var jobs = await client.GetAsync(
             $"/api/deployments/{registration.Deployment.Id}/jobs");
         var jobList = await jobs.Content
@@ -344,8 +344,10 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
         Assert.Contains(
-            inventory!.Deployments,
-            item => item.Deployment.Id == registration.Deployment.Id);
+            inventory.RootElement.GetProperty("deployments").EnumerateArray(),
+            item => item.GetProperty("deployment")
+                .GetProperty("id")
+                .GetGuid() == registration.Deployment.Id);
         Assert.Equal(HttpStatusCode.OK, jobs.StatusCode);
         Assert.Empty(jobList!.Jobs);
     }
@@ -400,6 +402,55 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         Assert.NotEqual(
             JsonValueKind.Null,
             state.RootElement.GetProperty("lastSuccessfulAt").ValueKind);
+    }
+
+    [Fact]
+    public async Task MixedVersionsBlockMutationButKeepObservationReadable()
+    {
+        using var client = CreateAuthenticatedClient(
+            $"{OrchestratorRoles.Reader},{OrchestratorRoles.Operator}");
+        var registrationResponse = await client.PostAsJsonAsync(
+            "/api/deployments",
+            new RegisterDeploymentRequest
+            {
+                Name = "Mixed Lite",
+                ManagerEndpoint = $"https://mixed-{Guid.NewGuid():N}.example.test",
+            });
+        var registration = await registrationResponse.Content
+            .ReadFromJsonAsync<DeploymentRegistrationResponse>();
+        var store = factory!.Services
+            .GetRequiredService<IDeploymentObservationStore>();
+        var now = DateTimeOffset.UtcNow;
+        await store.RecordAttemptAsync(
+            new DeploymentObservationAttempt(
+                Guid.NewGuid(),
+                registration!.Deployment.Id,
+                DeploymentObservationStatus.Healthy,
+                "observation.healthy",
+                now,
+                now,
+                [new ObservedComponent("lite", "3.0.1", "current")]),
+            CancellationToken.None);
+
+        var gate = await client.PostAsync(
+            $"/api/deployments/{registration.Deployment.Id}/mutation-gate",
+            content: null);
+        using var gateBody = JsonDocument.Parse(
+            await gate.Content.ReadAsStringAsync());
+        var observation = await client.GetAsync(
+            $"/api/deployments/{registration.Deployment.Id}/observations/current");
+
+        Assert.Equal(HttpStatusCode.Conflict, gate.StatusCode);
+        Assert.Equal(
+            "deployment.component_version_mismatch",
+            gateBody.RootElement.GetProperty("code").GetString());
+        Assert.Equal(
+            "lite",
+            gateBody.RootElement
+                .GetProperty("mismatches")[0]
+                .GetProperty("component")
+                .GetString());
+        Assert.Equal(HttpStatusCode.OK, observation.StatusCode);
     }
 
     [Fact]

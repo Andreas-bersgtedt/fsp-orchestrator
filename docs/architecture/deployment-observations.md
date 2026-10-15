@@ -63,3 +63,23 @@ Deployment detail shows:
 Deployment selectors are native buttons with `aria-pressed`. The selected
 status uses an atomic polite live region so keyboard and screen-reader users
 receive the new status and collection time after selection.
+
+## Mutation compatibility
+
+The Infrastructure assembly embeds
+`contracts/fsp/3.1.0/release-manifest.json`. The mutation gate reads the Lite
+package version, Manager image tag, release version, and
+`componentsMoveTogether` setting from that resource.
+
+Mutation is allowed only when:
+
+- the latest observation succeeded and is not stale;
+- the topology's required `lite` or `manager` value is present;
+- that value matches its manifest version;
+- every other observed version matches the release version when components
+  move together.
+
+The API returns `deployment.component_version_mismatch` with one row per
+component containing expected and observed versions. Missing, stale, and
+failed observations use separate stable codes. Health, observation refresh,
+inventory, and job-report reads do not use the mutation gate.
