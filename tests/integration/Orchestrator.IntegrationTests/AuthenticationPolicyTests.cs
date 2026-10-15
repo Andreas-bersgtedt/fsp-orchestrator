@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -60,6 +61,7 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
         store.Open(OpenFlags.ReadWrite);
         store.Remove(certificate);
         certificate.Dispose();
+        SqliteConnection.ClearAllPools();
         if (Directory.Exists(dataDirectory))
         {
             Directory.Delete(dataDirectory, recursive: true);
@@ -138,6 +140,38 @@ public sealed class AuthenticationPolicyTests : IAsyncLifetime, IDisposable
 
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReaderCanInspectDatabaseAndSecurityAdminCanBackupAndRestore()
+    {
+        using var reader = CreateAuthenticatedClient(OrchestratorRoles.Reader);
+        using var securityAdmin =
+            CreateAuthenticatedClient(OrchestratorRoles.SecurityAdmin);
+
+        var diagnostics =
+            await reader.GetFromJsonAsync<DatabaseDiagnosticsResponse>(
+                "/api/system/database");
+        var backupResponse = await securityAdmin.PostAsync(
+            "/api/system/database/backups",
+            content: null);
+        var backup =
+            await backupResponse.Content.ReadFromJsonAsync<DatabaseBackupResponse>();
+        var restoreResponse = await securityAdmin.PostAsJsonAsync(
+            "/api/system/database/restore",
+            new RestoreDatabaseBackupRequest
+            {
+                FileName = backup!.FileName,
+                Sha256 = backup.Sha256,
+            });
+        var restore =
+            await restoreResponse.Content.ReadFromJsonAsync<DatabaseRestoreResponse>();
+
+        Assert.Equal("ok", diagnostics!.Integrity);
+        Assert.Contains("InitialPersistence", diagnostics.Migration);
+        Assert.Equal(HttpStatusCode.Created, backupResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
+        Assert.True(restore!.Restored);
     }
 
     [Fact]

@@ -9,6 +9,7 @@ using Fsp.Orchestrator.Application.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -63,6 +64,7 @@ public sealed class BootstrapEndpointTests : IAsyncLifetime, IDisposable
         store.Open(OpenFlags.ReadWrite);
         store.Remove(certificate);
         certificate.Dispose();
+        SqliteConnection.ClearAllPools();
         if (Directory.Exists(dataDirectory))
         {
             Directory.Delete(dataDirectory, recursive: true);

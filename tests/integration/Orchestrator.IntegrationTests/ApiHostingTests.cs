@@ -6,6 +6,7 @@ using Fsp.Orchestrator.Api.Endpoints;
 using Fsp.Orchestrator.Api.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting;
 
 namespace Fsp.Orchestrator.IntegrationTests;
@@ -34,6 +35,7 @@ public sealed class ApiHostingTests : IAsyncLifetime
         store.Open(OpenFlags.ReadWrite);
         store.Remove(certificate);
         certificate.Dispose();
+        SqliteConnection.ClearAllPools();
         if (Directory.Exists(dataDirectory))
         {
             Directory.Delete(dataDirectory, recursive: true);

@@ -168,6 +168,11 @@ An unconfigured installation offers a built-in, credential-free
 [first-run bootstrap flow](./docs/setup/entra-bootstrap.md) for discovering or
 creating registrations and atomically committing only public identifiers.
 
+Non-secret inventory, job, and audit metadata is stored in a migrated SQLite
+database under the service data directory. Migrations and integrity checks run
+before readiness; backup and restore use managed files and approved SHA-256
+hashes. See [local SQLite persistence](./docs/architecture/sqlite-persistence.md).
+
 The engineering sequence is:
 
 1. publish and test the FSP 3.1.0 API and release contracts;

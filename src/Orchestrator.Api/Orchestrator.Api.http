@@ -17,6 +17,27 @@ GET {{baseUrl}}/api/session
 Accept: application/json
 Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
 
+### Get database diagnostics
+GET {{baseUrl}}/api/system/database
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Create database backup
+POST {{baseUrl}}/api/system/database/backups
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+
+### Restore database backup
+POST {{baseUrl}}/api/system/database/restore
+Accept: application/json
+Authorization: Bearer {{$dotenv ORCHESTRATOR_ACCESS_TOKEN}}
+Content-Type: application/json
+
+{
+  "fileName": "orchestrator-20261015-100000-example.db",
+  "sha256": "replace-with-approved-sha256"
+}
+
 ### Validate selected Entra application registrations
 POST {{baseUrl}}/api/identity/registrations/validate
 Accept: application/json

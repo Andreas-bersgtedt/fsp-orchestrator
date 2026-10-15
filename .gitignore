@@ -5,3 +5,6 @@ artifacts/
 **/bin/
 **/obj/
 src/Orchestrator.Web/dist/
+*.db
+*.db-shm
+*.db-wal
